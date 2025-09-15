@@ -1,0 +1,52 @@
+version: "3.9"
+services:
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+
+  minio:
+    image: quay.io/minio/minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    ports:
+      - "9002:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+
+  createbuckets:
+    image: quay.io/minio/mc
+    depends_on:
+      - minio
+    entrypoint: ["/bin/sh","-c"]
+    environment:
+      MC_HOST_minio: http://${MINIO_ROOT_USER}:${MINIO_ROOT_PASSWORD}@minio:9000
+      MINIO_BUCKET: ${MINIO_BUCKET}
+    command: |
+      mc ready minio &&       mc mb -p minio/$MINIO_BUCKET || true &&       mc anonymous set download minio/$MINIO_BUCKET || true
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file: .env
+    depends_on:
+      - db
+      - minio
+    ports:
+      - "8001:8000"
+    volumes:
+      - ./app:/app
+
+volumes:
+  pg_data:
+  minio_data:
