@@ -1,0 +1,167 @@
+/* Global reset & base */
+:root{
+  --bg:#f5f7fa;
+  --card:#ffffff;
+  --muted:#6b7280;
+  --primary:#2563eb;
+  --danger:#ef4444;
+  --glass: rgba(16,24,40,0.04);
+  --radius:8px;
+  --container:1100px;
+  --gap:12px;
+  --pad:16px;
+  --shadow: 0 6px 20px rgba(16,24,40,0.06);
+  --text:#111827;
+}
+
+*{box-sizing:border-box}
+html,body,#root{height:100%}
+body{
+  margin:0;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+  background:var(--bg);
+  color:var(--text);
+  -webkit-tap-highlight-color: transparent;
+  line-height:1.4;
+  font-size:14px;
+}
+
+/* Layout container */
+.app {
+  max-width:var(--container);
+  margin:24px auto;
+  padding:var(--pad);
+}
+
+/* Card */
+.card {
+  background:var(--card);
+  border-radius:var(--radius);
+  box-shadow:var(--shadow);
+  padding:var(--pad);
+}
+
+/* Header */
+.header {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:var(--gap);
+}
+.header h1{ margin:0; font-size:20px; font-weight:600; }
+
+/* Controls / toolbar */
+.controls {
+  display:flex;
+  gap:var(--gap);
+  align-items:center;
+  margin-top:12px;
+  flex-wrap:wrap;
+}
+
+/* Buttons */
+button {
+  appearance:none;
+  border:0;
+  padding:8px 12px;
+  border-radius:8px;
+  background:var(--primary);
+  color:#fff;
+  font-weight:600;
+  cursor:pointer;
+  transition:transform .08s ease, box-shadow .08s ease;
+}
+button:hover{ transform:translateY(-1px) }
+button.secondary{
+  background:var(--muted);
+}
+button.ghost{
+  background:transparent;
+  color:var(--text);
+  border:1px solid #e6e9ef;
+}
+
+/* Forms & inputs */
+input[type="file"]{ display:inline-block; }
+input, select, textarea {
+  padding:8px 10px;
+  border-radius:8px;
+  border:1px solid #e6e9ef;
+  background:#fff;
+  outline:none;
+}
+label{ display:block; margin-bottom:6px; font-size:13px; color:var(--muted) }
+
+/* Camera / preview area */
+.media {
+  display:flex;
+  gap:16px;
+  flex-wrap:wrap;
+  margin-top:16px;
+  align-items:flex-start;
+}
+.media video {
+  width:320px;
+  height:240px;
+  background:#000;
+  border-radius:8px;
+  border:1px solid #e6e9ef;
+  object-fit:cover;
+}
+.media .preview {
+  max-width:320px;
+  width:320px;
+  border-radius:8px;
+  overflow:hidden;
+  border:1px solid #e6e9ef;
+  background:var(--glass);
+  padding:8px;
+}
+.media .preview img{ width:100%; height:auto; display:block; }
+
+/* Students / dashboard */
+.grid {
+  display:grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap:16px;
+  margin-top:16px;
+}
+.student-card{
+  display:flex;
+  gap:8px;
+  align-items:center;
+  padding:10px;
+  border-radius:8px;
+  border:1px solid #eef2ff;
+  background:#fff;
+}
+.student-card img{
+  width:56px;
+  height:56px;
+  border-radius:8px;
+  object-fit:cover;
+  flex-shrink:0;
+}
+.student-meta{ flex:1 }
+.student-name{ font-weight:600; margin:0; font-size:14px }
+.student-sub{ color:var(--muted); font-size:12px }
+
+/* Attendance table */
+.table-wrap{ margin-top:16px; overflow:auto; border-radius:8px; border:1px solid #eef2ff; }
+table{ width:100%; border-collapse:collapse; min-width:720px }
+th,td{ padding:10px 12px; text-align:left; border-bottom:1px solid #f3f4f6; font-size:13px }
+th{ background:#fafafa; color:var(--muted); font-weight:700; position:sticky; top:0; z-index:1 }
+
+/* Small helpers */
+.kv{ display:flex; gap:8px; align-items:center; }
+.badge{ padding:6px 8px; border-radius:999px; background:#f3f4f6; color:var(--muted); font-size:12px }
+.status-present{ color:#059669; font-weight:600 }
+.status-absent{ color:var(--danger); font-weight:600 }
+
+/* Responsive tweaks */
+@media (max-width:700px){
+  .media video, .media .preview{ width:100%; height:auto }
+  .header{ flex-direction:column; align-items:flex-start; gap:8px }
+}

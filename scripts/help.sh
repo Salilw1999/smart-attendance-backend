@@ -1,0 +1,15 @@
+#!/bin/bash
+
+echo "Welcome to the Student Attendance Application!"
+echo "Usage:"
+echo "  ./scripts/help.sh [command]"
+echo ""
+echo "Commands:"
+echo "  start        Start the application (frontend and backend)"
+echo "  build        Build the Docker images for frontend and backend"
+echo "  up           Start the application using Docker Compose"
+echo "  down         Stop the application"
+echo "  export       Export attendance data to Excel"
+echo "  help         Show this help message"
+echo ""
+echo "For more information, please refer to the README files in the frontend and backend directories."
