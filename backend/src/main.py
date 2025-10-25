@@ -1,7 +1,14 @@
+import sys
+from pathlib import Path
+
+# Ensure the src directory is on sys.path so absolute imports like
+# `models`, `services`, `db` resolve when running from backend/src
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from backend.src.api.routes.attendance import router as attendance_router
-from backend.src.db.db import init_db
+from api.routes.attendance import router as attendance_router
+from db.db import init_db
 
 app = FastAPI()
 
@@ -13,12 +20,24 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-@app.on_event("startup")
-async def startup_event():
-    await init_db()
 
+@app.on_event("startup")
+def startup_event():
+    # Create DB tables on startup
+    init_db()
+
+# Mount the attendance router under /api/attendance
 app.include_router(attendance_router, prefix="/api/attendance", tags=["attendance"])
 
+# Authentication router
+from api.routes.auth import router as auth_router
+app.include_router(auth_router, prefix="/api/auth", tags=["auth"])
+
+# Students router
+from api.routes.students import router as students_router
+app.include_router(students_router, prefix="/api/students", tags=["students"])
+
+
 @app.get("/")
-async def root():
+def root():
     return {"message": "Welcome to the Student Attendance API"}

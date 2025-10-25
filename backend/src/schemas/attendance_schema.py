@@ -19,5 +19,15 @@ class Attendance(AttendanceBase):
     class Config:
         orm_mode = True
 
+
+class AttendanceResponse(BaseModel):
+    id: int
+    student_id: int
+    date: datetime
+    status: str
+
+    class Config:
+        orm_mode = True
+
 class AttendanceList(BaseModel):
     attendances: List[Attendance]

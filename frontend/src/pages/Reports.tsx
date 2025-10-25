@@ -1,16 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import { fetchAttendanceReports } from '../services/api';
-import { AttendanceReport } from '../types';
+import { AttendanceRecord } from '../types';
 
 const Reports: React.FC = () => {
-    const [reports, setReports] = useState<AttendanceReport[]>([]);
+    const [reports, setReports] = useState<AttendanceRecord[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
         const loadReports = async () => {
             try {
-                const data = await fetchAttendanceReports();
+                const data = await fetchAttendanceReports({});
                 setReports(data);
             } catch (err) {
                 setError('Failed to load reports');
@@ -50,7 +50,7 @@ const Reports: React.FC = () => {
                     {reports.map((report) => (
                         <tr key={report.id}>
                             <td>{report.date}</td>
-                            <td>{report.studentName}</td>
+                            <td>{report.studentId}</td>
                             <td>{report.status}</td>
                         </tr>
                     ))}

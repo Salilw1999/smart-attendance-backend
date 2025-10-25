@@ -1,6 +1,10 @@
 import React, { useRef, useState } from 'react';
 
-const CameraCapture: React.FC = () => {
+interface CameraCaptureProps {
+  onCapture: (photo: string) => Promise<void>;
+}
+
+const CameraCapture: React.FC<CameraCaptureProps> = ({ onCapture }) => {
     const videoRef = useRef<HTMLVideoElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [image, setImage] = useState<string | null>(null);

@@ -8,9 +8,10 @@ class MinioClient:
             os.getenv("MINIO_ENDPOINT"),
             access_key=os.getenv("MINIO_ACCESS_KEY"),
             secret_key=os.getenv("MINIO_SECRET_KEY"),
-            secure=False
+            secure=os.getenv("MINIO_SECURE", "false").lower() in ("1", "true", "yes")
         )
-        self.bucket_name = os.getenv("MINIO_BUCKET_NAME")
+        # Use MINIO_BUCKET for consistency with config
+        self.bucket_name = os.getenv("MINIO_BUCKET", "student-photos")
 
     def create_bucket(self):
         try:

@@ -1,0 +1,87 @@
+services:
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
+      POSTGRES_DB: ${POSTGRES_DB:-attendance_db}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init/postgres:/docker-entrypoint-initdb.d
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-attendance_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - attendance_net
+
+  minio:
+    image: minio/minio
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:-minioadmin}
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio_data:/data
+    ports:
+      - "9090:9000"  # API port
+      - "9001:9001"  # Console (UI) port
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+    networks:
+      - attendance_net
+
+  backend:
+    build: 
+      context: ./backend
+      dockerfile: Dockerfile
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-password}@postgres:5432/${POSTGRES_DB:-attendance_db}
+      - MINIO_ENDPOINT=minio:9090
+      - MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY:-minioadmin}
+      - MINIO_SECRET_KEY=${MINIO_SECRET_KEY:-minioadmin}
+      - MINIO_BUCKET=${MINIO_BUCKET:-student-photos}
+      - MINIO_SECURE=false
+    volumes:
+      - ./backend:/app
+    ports:
+      - "8888:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    networks:
+      - attendance_net
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    environment:
+      - API_PROTOCOL=${API_PROTOCOL:-http}
+      - API_HOST=${API_HOST:-localhost}
+      - API_PORT=${API_PORT:-8888}
+      - API_PREFIX=${API_PREFIX:-/api}
+      - BACKEND_HOST=backend
+      - BACKEND_PORT=8000
+    ports:
+      - "3005:80"
+    depends_on:
+      - backend
+    networks:
+      - attendance_net
+
+volumes:
+  postgres_data: {}
+  minio_data: {}
+
+networks:
+  attendance_net:
+    name: attendance_net

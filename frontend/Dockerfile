@@ -1,29 +1,23 @@
 # ---------- Build Stage ----------
 FROM node:18-slim AS build
-
-# Set working directory
 WORKDIR /app
-
-# Copy only package files for caching
 COPY package*.json ./
-
-# Install dependencies
-RUN npm install --force --slient
-
-# Copy all frontend source files
+RUN npm install --force --silent
 COPY . ./
-
-# Build optimized production files
 RUN npm run build
 
-# ---------- Run Stage ----------
-FROM nginx:alpine
+# ---------- Production Stage ----------
+FROM nginx:stable-alpine
 
-# Copy build output to nginx html directory
+# Copy build output
 COPY --from=build /app/build /usr/share/nginx/html
+# Copy nginx template + config template + entrypoint
+COPY nginx.conf.template /etc/nginx/nginx.conf.template
+COPY config.js.template /usr/share/nginx/html/config.js.template
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
 
-# Expose HTTP port
 EXPOSE 80
 
-# Start Nginx
+ENTRYPOINT ["/entrypoint.sh"]
 CMD ["nginx", "-g", "daemon off;"]

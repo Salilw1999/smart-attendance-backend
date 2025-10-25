@@ -2,6 +2,7 @@ from openpyxl import Workbook
 from datetime import datetime
 from typing import List, Dict
 
+
 def export_attendance_to_excel(attendance_data: List[Dict], file_name: str) -> str:
     """
     Exports attendance data to an Excel file.
@@ -23,7 +24,11 @@ def export_attendance_to_excel(attendance_data: List[Dict], file_name: str) -> s
 
     # Add attendance data
     for record in attendance_data:
-        sheet.append([record['student_id'], record['student_name'], record['date'], record['status']])
+        # Format date if it's a datetime
+        date_val = record.get('date')
+        if hasattr(date_val, 'strftime'):
+            date_val = date_val.strftime('%Y-%m-%d %H:%M:%S')
+        sheet.append([record.get('student_id'), record.get('student_name'), date_val, record.get('status')])
 
     # Save the workbook
     file_path = f"{file_name}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"

@@ -1,15 +1,21 @@
 from sqlalchemy import Column, Integer, String, DateTime
-from sqlalchemy.ext.declarative import declarative_base
 from datetime import datetime
+from db.db import Base
 
-Base = declarative_base()
 
 class Student(Base):
     __tablename__ = 'students'
 
     id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, index=True)
-    photo_url = Column(String, index=True)
+    name = Column(String, index=True, nullable=False)
+    unique_number = Column(String, unique=True, index=True, nullable=False)
+    classroom = Column(String, index=True, nullable=True)
+    class_name = Column(String, index=True, nullable=True)
+    parent_contact = Column(String, nullable=True)
+    parent_email = Column(String, nullable=True)
+    contact_number = Column(String, nullable=True)
+    blood_group = Column(String, nullable=True)
+    photo_url = Column(String, index=True, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
     def __repr__(self):

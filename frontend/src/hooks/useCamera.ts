@@ -36,7 +36,7 @@ const useCamera = () => {
     const stopCamera = () => {
         const video = document.querySelector('video');
         if (video) {
-            const stream = video.srcObject;
+            const stream = video.srcObject as MediaStream;
             if (stream) {
                 const tracks = stream.getTracks();
                 tracks.forEach((track) => track.stop());

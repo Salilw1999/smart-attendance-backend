@@ -34,7 +34,7 @@ const Dashboard: React.FC = () => {
                     <StudentCard key={student.id} student={student} />
                 ))}
             </div>
-            <AttendanceTable attendanceData={attendanceData} />
+            <AttendanceTable students={attendanceData} />
         </div>
     );
 };

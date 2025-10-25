@@ -1,6 +1,10 @@
 import React, { useState } from 'react';
 
-const ManualPhotoUpload: React.FC = () => {
+interface ManualPhotoUploadProps {
+  onUpload: (photo: string) => Promise<void>;
+}
+
+const ManualPhotoUpload: React.FC<ManualPhotoUploadProps> = ({ onUpload }) => {
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [uploadStatus, setUploadStatus] = useState<string>('');
 

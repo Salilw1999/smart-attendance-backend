@@ -1,7 +1,9 @@
 import axios from 'axios';
 import { Student, AttendanceRecord } from '../interfaces/types';
 
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8000';
+const config = (window as any).ENV || {};
+const API_BASE_URL = config.API_BASE_URL;
+const API_PREFIX = config.API_PREFIX;
 
 /** 📸 Take snapshot */
 export const takeSnapshot = async (imageData: string): Promise<Student[]> => {
@@ -39,7 +41,7 @@ export const exportAttendanceToExcel = async (): Promise<void> => {
 /** 🧑‍🎓 Fetch attendance data */
 export const fetchAttendanceData = async (params: Record<string, any> = {}): Promise<Student[]> => {
   const query = Object.keys(params).length ? `?${new URLSearchParams(params).toString()}` : '';
-  const response = await axios.get<Student[]>(`${API_BASE_URL}/api/attendance${query}`);
+  const response = await axios.get<Student[]>(`${API_BASE_URL}/attendance${query}`);
   return response.data;
 };
 
@@ -51,8 +53,42 @@ export const fetchAttendanceReports = async (params: Record<string, any>): Promi
 
 /** 🧾 Fetch all students */
 export const fetchStudents = async (params: Record<string, any> = {}): Promise<Student[]> => {
-  const response = await axios.get<Student[]>(`${API_BASE_URL}/api/students`, { params });
+  const response = await axios.get<Student[]>(`${API_BASE_URL}/students`, { params });
   return response.data;
 };
 
+/** 🔐 Login user */
+export const login = async (username: string, password: string) => {
+  const response = await axios.post(`${API_BASE_URL}/api/auth/login`, {
+    username,
+    password,
+  });
+  return response.data;
+};
 
+/** 🔄 Change password */
+export const changePassword = async (currentPassword: string, newPassword: string) => {
+  const token = localStorage.getItem('token');
+  const response = await axios.post(
+    `${API_BASE_URL}/api/auth/change-password`,
+    {
+      current_password: currentPassword,
+      new_password: newPassword,
+    },
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+  return response.data;
+};
+
+// Setup axios interceptor for auth headers
+axios.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});

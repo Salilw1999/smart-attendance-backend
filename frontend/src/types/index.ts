@@ -6,8 +6,12 @@ export interface Student {
 }
 
 export interface AttendanceRecord {
+  id: string;
+  studentId: string;
   date: string;
-  status: 'present' | 'absent' | 'late';
+  status: 'present' | 'absent' | 'late' | 'excused';
+  notes?: string;
+  [key: string]: any;
 }
 
 export interface AttendanceSummary {

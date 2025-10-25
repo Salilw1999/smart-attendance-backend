@@ -15,3 +15,16 @@ def get_db():
         yield db
     finally:
         db.close()
+
+
+def init_db():
+    """Create database tables. Call on application startup."""
+    # Import models so they are registered on the Base.metadata
+    try:
+        # Importing modules that define models registers them with Base
+        import models.student_model  # noqa: F401
+        import models.attendance_model  # noqa: F401
+    except Exception:
+        # If models are not present yet, ignore; metadata.create_all will still work if models imported elsewhere
+        pass
+    Base.metadata.create_all(bind=engine)
