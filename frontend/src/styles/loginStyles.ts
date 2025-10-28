@@ -4,7 +4,7 @@ export const loginStyles = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    background: 'url("/assets/images/login-bg.jpg")',
+    background: 'url("/assets/images/background.jpg")',
     backgroundSize: 'cover',
     backgroundPosition: 'center',
   },

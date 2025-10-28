@@ -18,3 +18,6 @@ envsubst '${API_PROTOCOL} ${API_HOST} ${API_PORT} ${API_PREFIX}' \
 echo "�🚀 Starting Nginx..."
 nginx -t  # optional: test config before running
 nginx -g 'daemon off;'
+
+
+

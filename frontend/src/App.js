@@ -9,6 +9,7 @@ import Dashboard from './pages/Dashboard';
 import Students from './pages/Students';
 import Attendance from './pages/Attendance';
 
+
 // Components
 import Layout from './components/Layout';
 
@@ -27,7 +28,7 @@ function App() {
             <Route path="/login" element={<Login />} />
             
             <Route
-              path="/"
+              path="../src/pages/Dashboard.js"
               element={
                 <PrivateRoute>
                   <Layout>

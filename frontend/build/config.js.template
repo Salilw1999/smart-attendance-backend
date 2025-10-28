@@ -1,0 +1,4 @@
+window.ENV = {
+  API_BASE_URL: '${API_PROTOCOL:-http}://${API_HOST:-localhost}:${API_PORT:-8888}',
+  API_PREFIX: '${API_PREFIX:-/api}'
+};

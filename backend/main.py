@@ -1,3 +1,9 @@
+import sys
+import os
+
+# Add the backend/src directory to the Python path
+sys.path.append(os.path.join(os.path.dirname(__file__), "src"))
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from api.routes.attendance import router as attendance_router

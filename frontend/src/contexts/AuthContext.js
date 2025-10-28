@@ -8,63 +8,31 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check for saved token on startup
-    const token = localStorage.getItem('token');
-    if (token) {
-      api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-      // Validate token and get user info
-      api.get('/api/auth/me')
-        .then(response => {
-          setUser(response.data);
-        })
-        .catch(() => {
-          localStorage.removeItem('token');
-          delete api.defaults.headers.common['Authorization'];
-        })
-        .finally(() => {
-          setLoading(false);
-        });
-    } else {
-      setLoading(false);
-    }
+    // Check for session on startup
+    api.get('/api/auth/me', { withCredentials: true })
+      .then(response => {
+        setUser(response.data);
+      })
+      .catch(() => {
+        setUser(null);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
   }, []);
 
   const login = async (username, password) => {
     try {
-      // OAuth2PasswordRequestForm expects form-encoded data (application/x-www-form-urlencoded)
-      const params = new URLSearchParams();
-      params.append('username', username);
-      params.append('password', password);
-
-      const response = await api.post('/api/auth/login', params.toString(), {
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      });
-
-      const accessToken = response.data?.access_token || response.data?.token;
-      if (!accessToken) {
-        return false;
-      }
-
-      localStorage.setItem('token', accessToken);
-      api.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
-
-      // fetch current user
-      try {
-        const userResp = await api.get('/api/auth/me');
-        setUser(userResp.data);
-      } catch (e) {
-        // ignore user fetch error for now
-      }
-
+      const response = await api.post('/api/auth/login', { username, password }, { withCredentials: true });
+      setUser(response.data.user);
       return true;
     } catch (error) {
       return false;
     }
   };
 
-  const logout = () => {
-    localStorage.removeItem('token');
-    delete api.defaults.headers.common['Authorization'];
+  const logout = async () => {
+    await api.post('/api/auth/logout', {}, { withCredentials: true });
     setUser(null);
   };
 

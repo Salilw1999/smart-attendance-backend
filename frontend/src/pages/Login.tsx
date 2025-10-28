@@ -24,6 +24,9 @@ import {
 import { loginStyles } from '../styles/loginStyles';
 import { useAuth } from '../contexts/AuthContext';
 
+import backgroundimage from '../../public/assets/images/background.png';
+import logo from '../../public/assets/images/logo.png';
+
 const Login: React.FC = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -33,6 +36,7 @@ const Login: React.FC = () => {
   const [showChangePassword, setShowChangePassword] = useState(false);
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+
   const navigate = useNavigate();
   const { login } = useAuth();
 
@@ -47,7 +51,7 @@ const Login: React.FC = () => {
         if (username === 'admin' && password === 'admin') {
           setShowChangePassword(true);
         } else {
-          navigate('/dashboard');
+          navigate('../pages/Dashboard.js'); // ✅ Fixed path
         }
       } else {
         setError('Invalid username or password');
@@ -69,10 +73,7 @@ const Login: React.FC = () => {
     try {
       const response = await fetch('/api/auth/change-password', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           current_password: password,
           new_password: newPassword
@@ -81,7 +82,7 @@ const Login: React.FC = () => {
 
       if (response.ok) {
         setShowChangePassword(false);
-        navigate('/dashboard');
+        navigate('/dashboard'); // ✅ Fixed path
       } else {
         const data = await response.json();
         setError(data.detail || 'Failed to change password');
@@ -94,28 +95,34 @@ const Login: React.FC = () => {
   };
 
   return (
-    <Box sx={loginStyles.root}>
+    <Box
+      sx={{
+        ...loginStyles.root,
+        backgroundImage: `url(${backgroundimage})`, // ✅ Correct usage
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+      }}
+    >
       <Card sx={loginStyles.card}>
-        <Box component="img" 
-          src="/assets/images/logo.png" 
-          alt="Logo" 
+        <Box
+          component="img"
+          src={logo} // ✅ Correct usage
+          alt="Logo"
           sx={loginStyles.logo}
         />
-        <Typography variant="h4" component="h1" sx={loginStyles.title}>
+
+        <Typography variant="h4" sx={loginStyles.title}>
           Smart Attendance
         </Typography>
-        
+
         {error && (
-          <Alert severity="error" sx={{ mb: 2 }}>
-            {error}
-          </Alert>
+          <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>
         )}
 
         <form onSubmit={handleSubmit} style={loginStyles.form}>
           <TextField
             fullWidth
             label="Username"
-            variant="outlined"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             disabled={loading}
@@ -124,15 +131,14 @@ const Login: React.FC = () => {
                 <InputAdornment position="start">
                   <PersonIcon color="primary" />
                 </InputAdornment>
-              ),
+              )
             }}
           />
-          
+
           <TextField
             fullWidth
             label="Password"
             type={showPassword ? 'text' : 'password'}
-            variant="outlined"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             disabled={loading}
@@ -144,14 +150,11 @@ const Login: React.FC = () => {
               ),
               endAdornment: (
                 <InputAdornment position="end">
-                  <IconButton
-                    onClick={() => setShowPassword(!showPassword)}
-                    edge="end"
-                  >
+                  <IconButton onClick={() => setShowPassword(!showPassword)}>
                     {showPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
                   </IconButton>
                 </InputAdornment>
-              ),
+              )
             }}
           />
 
@@ -162,21 +165,18 @@ const Login: React.FC = () => {
             disabled={loading}
             sx={loginStyles.submitButton}
           >
-            {loading ? (
-              <CircularProgress size={24} color="inherit" />
-            ) : (
-              'Sign In'
-            )}
+            {loading ? <CircularProgress size={24} color="inherit" /> : 'Sign In'}
           </Button>
         </form>
       </Card>
 
-      <Dialog open={showChangePassword} onClose={() => setShowChangePassword(false)}>
+      <Dialog open={showChangePassword}>
         <DialogTitle>Change Default Password</DialogTitle>
         <DialogContent>
-          <Typography variant="body2" sx={{ mb: 2 }}>
+          <Typography sx={{ mb: 2 }}>
             Please change your default password before continuing.
           </Typography>
+
           <TextField
             fullWidth
             label="New Password"
@@ -185,6 +185,7 @@ const Login: React.FC = () => {
             onChange={(e) => setNewPassword(e.target.value)}
             sx={{ mb: 2 }}
           />
+
           <TextField
             fullWidth
             label="Confirm New Password"
@@ -193,8 +194,9 @@ const Login: React.FC = () => {
             onChange={(e) => setConfirmPassword(e.target.value)}
           />
         </DialogContent>
+
         <DialogActions>
-          <Button 
+          <Button
             onClick={handleChangePassword}
             disabled={loading}
             variant="contained"

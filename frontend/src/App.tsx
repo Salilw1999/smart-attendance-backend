@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Home from './pages/Home';
 import Students from './pages/Students';
 import Reports from './pages/Reports';
@@ -25,6 +25,8 @@ const App: React.FC = () => {
           />
           <Route path="/students" element={<Students />} />
           <Route path="/reports" element={<Reports />} />
+          {/* Catch-all route for undefined paths */}
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </div>
     </Router>
