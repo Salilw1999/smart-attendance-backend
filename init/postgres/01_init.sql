@@ -16,7 +16,7 @@ VALUES (
     'admin',
     'admin@example.com',
     'Administrator',
-    '$2b$12$Zj5RPSAsv3c5DZC.IFD14.lQsKM.oKv5rca5jfZ0PV1M7hIDZyITm',  -- hashed 'admin'
+    '$2b$12$Zj5RPSAsv3c5DZC.IFD14.lQsKM.oKv5rca5jfZ0PV1M7hIDZyITm', -- hashed 'admin'
     true,
     true
 ) ON CONFLICT (username) DO NOTHING;
@@ -24,11 +24,16 @@ VALUES (
 -- Create students table
 CREATE TABLE IF NOT EXISTS students (
     id SERIAL PRIMARY KEY,
-    roll_number VARCHAR(20) UNIQUE NOT NULL,
-    full_name VARCHAR(100) NOT NULL,
+    name VARCHAR(100) NOT NULL,
+    unique_number VARCHAR(50) UNIQUE NOT NULL,
+    classroom VARCHAR(50),
+    class_name VARCHAR(50),
+    parent_contact VARCHAR(20),
+    parent_email VARCHAR(255),
+    contact_number VARCHAR(20),
+    blood_group VARCHAR(10),
     photo_url VARCHAR(255),
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Create attendance table
@@ -41,6 +46,7 @@ CREATE TABLE IF NOT EXISTS attendance (
     confidence_score FLOAT
 );
 
--- Create indexes
+-- Indexes for Attendance Table
 CREATE INDEX IF NOT EXISTS idx_attendance_student_id ON attendance(student_id);
+CREATE INDEX IF NOT EXISTS idx_attendance_status ON attendance(status);
 CREATE INDEX IF NOT EXISTS idx_attendance_timestamp ON attendance(timestamp);

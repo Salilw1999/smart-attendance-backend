@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect } from "react";
 import {
   Box,
   Typography,
@@ -10,90 +10,182 @@ import {
   TableHead,
   TableRow,
   Button,
-  TablePagination
-} from '@mui/material';
-import { api } from '../services/api';
+  TablePagination,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+} from "@mui/material";
+import { api } from "../services/api";
 
-const Students = () => {
+export default function Students() {
   const [students, setStudents] = useState([]);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
 
+  const [open, setOpen] = useState(false);
+  const [imageFile, setImageFile] = useState(null);
+
+  const [formData, setFormData] = useState({
+    name: "",
+    unique_number: "",
+    classroom: "",
+    parent_contact: "",
+    parent_email: "",
+    contact_number: "",
+    blood_group: "",
+  });
+
+  // ✅ Load data on page load
   useEffect(() => {
-    fetchStudents();
+    loadStudents();
   }, []);
 
-  const fetchStudents = async () => {
+  const loadStudents = async () => {
     try {
-      const response = await api.get('/api/students/');
-      setStudents(response.data);
-    } catch (error) {
-      console.error('Error fetching students:', error);
+      const data = await fetchStudents();
+      setStudents(data);
+    } catch (err) {
+      console.error("Error loading students:", err);
     }
   };
 
-  const handleChangePage = (event, newPage) => {
-    setPage(newPage);
-  };
+  const handleSave = async () => {
+    try {
+      // ✅ Step 1: Save student to DB
+      const savedStudent = await createStudent(formData);
 
-  const handleChangeRowsPerPage = (event) => {
-    setRowsPerPage(parseInt(event.target.value, 10));
-    setPage(0);
+      // ✅ Step 2: Upload Photo if selected
+      if (imageFile) {
+        const imgData = new FormData();
+        imgData.append("file", imageFile);
+        imgData.append("student_id", savedStudent.id); // ✅ backend expects this ID
+        await uploadPhoto(imgData);
+      }
+
+      setOpen(false);
+      loadStudents();
+    } catch (err) {
+      console.error("Error saving student:", err);
+    }
   };
 
   return (
     <Box sx={{ p: 3 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
-        <Typography variant="h4" gutterBottom>
-          Students
-        </Typography>
-        <Button variant="contained" color="primary">
+      {/* HEADER */}
+      <Box sx={{ display: "flex", justifyContent: "space-between", mb: 3 }}>
+        <Typography variant="h4">Students</Typography>
+        <Button variant="contained" onClick={() => setOpen(true)}>
           Add New Student
         </Button>
       </Box>
 
-      <Paper sx={{ width: '100%', overflow: 'hidden' }}>
+      {/* STUDENTS TABLE */}
+      <Paper>
         <TableContainer>
           <Table stickyHeader>
             <TableHead>
               <TableRow>
                 <TableCell>ID</TableCell>
                 <TableCell>Name</TableCell>
-                <TableCell>Roll Number</TableCell>
-                <TableCell>Class</TableCell>
-                <TableCell>Actions</TableCell>
+                <TableCell>Unique Number</TableCell>
+                <TableCell>Classroom</TableCell>
+                <TableCell>Contact</TableCell>
               </TableRow>
             </TableHead>
+
             <TableBody>
-              {students
-                .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                .map((student) => (
-                  <TableRow key={student.id}>
-                    <TableCell>{student.id}</TableCell>
-                    <TableCell>{student.name}</TableCell>
-                    <TableCell>{student.roll_number}</TableCell>
-                    <TableCell>{student.class_name}</TableCell>
-                    <TableCell>
-                      <Button size="small" color="primary">Edit</Button>
-                      <Button size="small" color="error">Delete</Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
+              {students.length > 0 ? (
+                students
+                  .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                  .map((st) => (
+                    <TableRow key={st.id}>
+                      <TableCell>{st?.id}</TableCell>
+                      <TableCell>{st?.name || "-"}</TableCell>
+                      <TableCell>{st?.unique_number || "-"}</TableCell>
+                      <TableCell>{st?.classroom || st?.class_name || "-"}</TableCell>
+                      <TableCell>{st?.contact_number || "-"}</TableCell>
+                    </TableRow>
+                  ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={5} align="center">
+                    No Students Found
+                  </TableCell>
+                </TableRow>
+              )}
             </TableBody>
           </Table>
         </TableContainer>
+
         <TablePagination
-          rowsPerPageOptions={[5, 10, 25]}
           component="div"
           count={students.length}
           rowsPerPage={rowsPerPage}
           page={page}
-          onPageChange={handleChangePage}
-          onRowsPerPageChange={handleChangeRowsPerPage}
+          onPageChange={(e, p) => setPage(p)}
+          onRowsPerPageChange={(e) => {
+            setRowsPerPage(parseInt(e.target.value, 10));
+            setPage(0);
+          }}
         />
       </Paper>
+
+      {/* ✅ ADD STUDENT FORM */}
+      <Dialog open={open} onClose={() => setOpen(false)} fullWidth>
+        <DialogTitle>Add Student</DialogTitle>
+        <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+          <TextField
+            label="Name"
+            value={formData.name}
+            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+            fullWidth
+          />
+          <TextField
+            label="Unique Number"
+            value={formData.unique_number}
+            onChange={(e) =>
+              setFormData({ ...formData, unique_number: e.target.value })
+            }
+            fullWidth
+          />
+          <TextField
+            label="Classroom"
+            value={formData.classroom}
+            onChange={(e) =>
+              setFormData({ ...formData, classroom: e.target.value })
+            }
+            fullWidth
+          />
+          <TextField
+            label="Parent Contact"
+            value={formData.parent_contact}
+            onChange={(e) =>
+              setFormData({ ...formData, parent_contact: e.target.value })
+            }
+            fullWidth
+          />
+          <TextField
+            label="Contact Number"
+            value={formData.contact_number}
+            onChange={(e) =>
+              setFormData({ ...formData, contact_number: e.target.value })
+            }
+            fullWidth
+          />
+
+          {/* ✅ Upload Photo */}
+          <input type="file" accept="image/*" onChange={(e) => setImageFile(e.target.files[0])} />
+        </DialogContent>
+
+        <DialogActions>
+          <Button onClick={() => setOpen(false)}>Cancel</Button>
+          <Button variant="contained" color="primary" onClick={handleSave}>
+            Save Student
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
-};
-
-export default Students;
+}
