@@ -33,6 +33,7 @@ const Login = () => {
       const result = await login(values.username, values.password);
       if (result.success) {
         navigate('/');
+        return;
       } else {
         setError(result.error);
       }

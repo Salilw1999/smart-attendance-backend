@@ -1,33 +1,30 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState } from 'react';
 import { api } from '../services/api';
 
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    // Check for session on startup
-    api.get('/api/auth/me', { withCredentials: true })
-      .then(response => {
-        setUser(response.data);
-      })
-      .catch(() => {
-        setUser(null);
-      })
-      .finally(() => {
-        setLoading(false);
-      });
-  }, []);
+  const [loading, setLoading] = useState(false);
 
   const login = async (username, password) => {
     try {
-      const response = await api.post('/api/auth/login', { username, password }, { withCredentials: true });
-      setUser(response.data.user);
-      return true;
+      setLoading(true);
+      const response = await api.post(
+        '/api/auth/login',
+        { username, password },
+        { withCredentials: true }
+      );
+
+      const userData = response.data.user || response.data;
+      setUser(userData);
+
+      return { success: true };
     } catch (error) {
-      return false;
+      setUser(null);
+      return { success: false, error: "Invalid username or password" };
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -36,20 +33,14 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
   };
 
-  const value = {
-    user,
-    login,
-    logout,
-    isAuthenticated: !!user,
-    loading
-  };
-
-  if (loading) {
-    return null; // or a loading spinner
-  }
-
   return (
-    <AuthContext.Provider value={value}>
+    <AuthContext.Provider value={{
+      user,
+      login,
+      logout,
+      isAuthenticated: !!user,
+      loading
+    }}>
       {children}
     </AuthContext.Provider>
   );

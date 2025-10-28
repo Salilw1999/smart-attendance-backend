@@ -9,13 +9,12 @@ import Dashboard from './pages/Dashboard';
 import Students from './pages/Students';
 import Attendance from './pages/Attendance';
 
-
 // Components
 import Layout from './components/Layout';
 
 const PrivateRoute = ({ children }) => {
   const { isAuthenticated } = useAuth();
-  return isAuthenticated ? children : <Navigate to="/login" />;
+  return isAuthenticated ? children : <Navigate to="/login" replace />;
 };
 
 function App() {
@@ -25,10 +24,12 @@ function App() {
       <AuthProvider>
         <Router>
           <Routes>
+            {/* Public Login Route */}
             <Route path="/login" element={<Login />} />
-            
+
+            {/* Default route → Dashboard */}
             <Route
-              path="../src/pages/Dashboard.js"
+              path="/"
               element={
                 <PrivateRoute>
                   <Layout>
@@ -37,7 +38,20 @@ function App() {
                 </PrivateRoute>
               }
             />
-            
+
+            {/* Dashboard route */}
+            <Route
+              path="/dashboard"
+              element={
+                <PrivateRoute>
+                  <Layout>
+                    <Dashboard />
+                  </Layout>
+                </PrivateRoute>
+              }
+            />
+
+            {/* Students */}
             <Route
               path="/students"
               element={
@@ -48,7 +62,8 @@ function App() {
                 </PrivateRoute>
               }
             />
-            
+
+            {/* Attendance */}
             <Route
               path="/attendance"
               element={
@@ -59,6 +74,9 @@ function App() {
                 </PrivateRoute>
               }
             />
+
+            {/* Any unknown route */}
+            <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </Router>
       </AuthProvider>
