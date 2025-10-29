@@ -116,12 +116,13 @@ export const deleteStudent = async (id: number): Promise<any> => {
 /**
  * ✅ NEW: Student Photo Upload API
  */
+// upload student photo -> POST /api/students/upload-photo
 export const uploadStudentPhoto = async (file: File): Promise<string> => {
   const formData = new FormData();
-  formData.append("photo", file);
+  formData.append("file", file);
 
   const response = await axios.post(
-    `${API_BASE_URL}/api/students/photo`,
+    `${API_BASE_URL}/api/upload-image`,
     formData,
     {
       headers: { "Content-Type": "multipart/form-data" },
@@ -129,7 +130,10 @@ export const uploadStudentPhoto = async (file: File): Promise<string> => {
     }
   );
 
-  return response.data.photo_url;
+  // Expect backend returns { photo_url: "http://..." } or { url: "..." }
+  // Use whichever key your backend returns; here we try both.
+  const data = response.data || {};
+  return data.photo_url ?? data.url ?? "";
 };
 
 /**

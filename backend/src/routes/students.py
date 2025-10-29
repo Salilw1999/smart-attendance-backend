@@ -1,22 +1,20 @@
-# backend/src/api/routes/students.py
 import os
 import uuid
-from datetime import datetime
 from fastapi import APIRouter, Depends, UploadFile, File, Form, HTTPException
 from sqlalchemy.orm import Session
-import io
 
 from db.db import get_db
 from models.student_model import Student
 from schemas.student_schema import StudentResponse
-from services.minio_service import upload_fileobj
+from services.minio_service import upload_file_to_minio
 
 router = APIRouter()
 
+
 @router.get("/", response_model=list[StudentResponse])
-def list_students(db: Session = Depends(get_db)):
-    students = db.query(Student).order_by(Student.id.desc()).all()
-    return students
+def get_students(db: Session = Depends(get_db)):
+    return db.query(Student).all()
+
 
 @router.post("/", response_model=StudentResponse)
 async def create_student(
@@ -28,22 +26,21 @@ async def create_student(
     parent_email: str = Form(None),
     contact_number: str = Form(None),
     blood_group: str = Form(None),
-    photo: UploadFile = File(None),
+    photo: UploadFile = File(None),  # ✅ Image upload
     db: Session = Depends(get_db),
 ):
-    # check uniqueness
-    exists = db.query(Student).filter(Student.unique_number == unique_number).first()
-    if exists:
-        raise HTTPException(status_code=400, detail="unique_number already exists")
+    # ✅ Ensure unique student number
+    existing_student = db.query(Student).filter(Student.unique_number == unique_number).first()
+    if existing_student:
+        raise HTTPException(status_code=400, detail="Student unique number already exists")
 
+    # ✅ Handle image upload if provided
     photo_url = None
     if photo:
-        # Build object name and upload
-        ext = photo.filename.split(".")[-1] if "." in photo.filename else "jpg"
-        object_name = f"students/{uuid.uuid4()}.{ext}"
-        # UploadFile.file is a SpooledTemporaryFile with read()
-        photo.file.seek(0)
-        photo_url = upload_fileobj(photo.file, object_name, photo.content_type)
+        file_extension = photo.filename.split(".")[-1]
+        file_name = f"students/{uuid.uuid4()}.{file_extension}"
+        upload_file_to_minio(file_name, photo.file, photo.content_type)
+        photo_url = os.getenv("MINIO_URL") + file_name
 
     new_student = Student(
         name=name,
@@ -54,13 +51,15 @@ async def create_student(
         parent_email=parent_email,
         contact_number=contact_number,
         blood_group=blood_group,
-        photo_url=photo_url,
-        created_at=datetime.utcnow()
+        photo_url=photo_url
     )
+
     db.add(new_student)
     db.commit()
     db.refresh(new_student)
+
     return new_student
+
 
 @router.put("/{student_id}", response_model=StudentResponse)
 async def update_student(
@@ -76,48 +75,38 @@ async def update_student(
     photo: UploadFile = File(None),
     db: Session = Depends(get_db),
 ):
+
     student = db.query(Student).filter(Student.id == student_id).first()
     if not student:
         raise HTTPException(status_code=404, detail="Student not found")
 
-    if unique_number and unique_number != student.unique_number:
-        other = db.query(Student).filter(Student.unique_number == unique_number).first()
-        if other:
-            raise HTTPException(status_code=400, detail="unique_number already exists")
+    if name: student.name = name
+    if unique_number: student.unique_number = unique_number
+    if classroom: student.classroom = classroom
+    if class_name: student.class_name = class_name
+    if parent_contact: student.parent_contact = parent_contact
+    if parent_email: student.parent_email = parent_email
+    if contact_number: student.contact_number = contact_number
+    if blood_group: student.blood_group = blood_group
 
-    if name is not None:
-        student.name = name
-    if unique_number is not None:
-        student.unique_number = unique_number
-    if classroom is not None:
-        student.classroom = classroom
-    if class_name is not None:
-        student.class_name = class_name
-    if parent_contact is not None:
-        student.parent_contact = parent_contact
-    if parent_email is not None:
-        student.parent_email = parent_email
-    if contact_number is not None:
-        student.contact_number = contact_number
-    if blood_group is not None:
-        student.blood_group = blood_group
-
+    # ✅ Upload new photo if provided
     if photo:
-        ext = photo.filename.split(".")[-1] if "." in photo.filename else "jpg"
-        object_name = f"students/{uuid.uuid4()}.{ext}"
-        photo.file.seek(0)
-        photo_url = upload_fileobj(photo.file, object_name, photo.content_type)
-        student.photo_url = photo_url
+        file_extension = photo.filename.split(".")[-1]
+        file_name = f"students/{uuid.uuid4()}.{file_extension}"
+        upload_file_to_minio(file_name, photo.file, photo.content_type)
+        student.photo_url = os.getenv("MINIO_URL") + file_name
 
     db.commit()
     db.refresh(student)
     return student
+
 
 @router.delete("/{student_id}")
 def delete_student(student_id: int, db: Session = Depends(get_db)):
     student = db.query(Student).filter(Student.id == student_id).first()
     if not student:
         raise HTTPException(status_code=404, detail="Student not found")
+
     db.delete(student)
     db.commit()
     return {"message": "Student deleted successfully"}
