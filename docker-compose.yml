@@ -41,13 +41,17 @@ services:
     build: 
       context: ./backend
       dockerfile: Dockerfile
+
+    env_file:
+      - backend/.env
     environment:
       - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-password}@postgres:5432/${POSTGRES_DB:-attendance_db}
-      - MINIO_ENDPOINT=minio:9090
-      - MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY:-minioadmin}
-      - MINIO_SECRET_KEY=${MINIO_SECRET_KEY:-minioadmin}
-      - MINIO_BUCKET=${MINIO_BUCKET:-student-photos}
-      - MINIO_SECURE=false
+      #- MINIO_HOST=${MINIO_HOST}
+      #- MINIO_PUBLIC_URL=${MINIO_PUBLIC_URL}
+      #- MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY}
+      #- MINIO_SECRET_KEY=${MINIO_SECRET_KEY}
+      #- MINIO_BUCKET=${MINIO_BUCKET}
+      #- MINIO_SECURE=${MINIO_SECURE}
     volumes:
       - ./backend:/app
     ports:
@@ -64,13 +68,15 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    environment:
-      - API_PROTOCOL=${API_PROTOCOL:-http}
-      - API_HOST=backend
-      - API_PORT=8888
-      - API_PREFIX=${API_PREFIX:-/api}
-      - BACKEND_HOST=backend
-      - BACKEND_PORT=8888
+    env_file:
+      - ./frontend/.env
+    #environment:
+     # - API_PROTOCOL=${API_PROTOCOL:-http}
+     # - API_HOST=backend
+     # - API_PORT=8888
+     # - API_PREFIX=${API_PREFIX:-/api}
+     # - BACKEND_HOST=backend
+     # - BACKEND_PORT=8888
     ports:
       - "3005:80"
     depends_on:
