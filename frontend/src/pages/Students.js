@@ -30,15 +30,14 @@ export default function Students() {
 
   useEffect(() => {
     loadStudents();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const loadStudents = async () => {
     try {
-      const res = await api.get("/api/students");
+      const res = await api.get("/api/students/");
       setStudents(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
-      console.error(err);
+      console.error("loadStudents:", err);
       showSnack("Failed to load students", "error");
     }
   };
@@ -64,7 +63,7 @@ export default function Students() {
       const url = URL.createObjectURL(f);
       setPreviewUrl(url);
     } else {
-      setPreviewUrl("");
+      setPreviewUrl(form.photo_url || "");
     }
   };
 
@@ -96,7 +95,7 @@ export default function Students() {
       setSelectedFile(null);
       await loadStudents();
     } catch (err) {
-      console.error(err);
+      console.error("save error:", err);
       const msg = err?.response?.data?.detail || "Failed to save student";
       showSnack(msg,"error");
     } finally {
@@ -146,7 +145,11 @@ export default function Students() {
                 students.slice(page*rowsPerPage, page*rowsPerPage+rowsPerPage).map(s => (
                   <TableRow key={s.id}>
                     <TableCell>
-                      {s.photo_url ? <Avatar src={s.photo_url} /> : <Avatar>{s.name ? s.name.charAt(0) : "?"}</Avatar>}
+                      {s.photo_url ? (
+                        <Avatar src={s.photo_url} alt={s.name} sx={{ width:48, height:48 }} />
+                      ) : (
+                        <Avatar sx={{ width:48, height:48 }}>{s.name ? s.name.charAt(0) : "?"}</Avatar>
+                      )}
                     </TableCell>
                     <TableCell>{s.unique_number ?? "-"}</TableCell>
                     <TableCell>{s.name ?? "-"}</TableCell>
@@ -164,15 +167,10 @@ export default function Students() {
           </Table>
         </TableContainer>
 
-        <TablePagination
-          rowsPerPageOptions={[5,10,25]}
-          component="div"
-          count={students.length}
-          rowsPerPage={rowsPerPage}
-          page={page}
-          onPageChange={(e,p) => setPage(p)}
-          onRowsPerPageChange={(e) => { setRowsPerPage(parseInt(e.target.value,10)); setPage(0); }}
-        />
+        <TablePagination rowsPerPageOptions={[5,10,25]} component="div"
+          count={students.length} rowsPerPage={rowsPerPage} page={page}
+          onPageChange={(e,p)=>setPage(p)}
+          onRowsPerPageChange={(e)=>{ setRowsPerPage(parseInt(e.target.value,10)); setPage(0); }} />
       </Paper>
 
       <Dialog open={open} onClose={() => setOpen(false)} maxWidth="sm" fullWidth>
@@ -181,15 +179,13 @@ export default function Students() {
           <Box sx={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:2 }}>
             <TextField label="Unique Number" value={form.unique_number} onChange={(e)=>setForm({...form, unique_number: e.target.value})} required />
             <TextField label="Name" value={form.name} onChange={(e)=>setForm({...form, name: e.target.value})} required />
-
             <TextField select label="Class" value={form.class_name || ""} onChange={(e)=>setForm({...form, class_name: e.target.value})}>
               <MenuItem value=""><em>None</em></MenuItem>
-              {classOptions.map(c => <MenuItem key={c} value={c}>{c}</MenuItem>)}
+              {classOptions.map(c=> <MenuItem key={c} value={c}>{c}</MenuItem>)}
             </TextField>
-
             <TextField select label="Classroom" value={form.classroom || ""} onChange={(e)=>setForm({...form, classroom: e.target.value})}>
               <MenuItem value=""><em>None</em></MenuItem>
-              {classroomOptions.map(c => <MenuItem key={c} value={c}>{c}</MenuItem>)}
+              {classroomOptions.map(c=> <MenuItem key={c} value={c}>{c}</MenuItem>)}
             </TextField>
 
             <TextField label="Parent Contact" value={form.parent_contact||""} onChange={(e)=>setForm({...form, parent_contact: e.target.value})} />
@@ -197,22 +193,32 @@ export default function Students() {
             <TextField label="Parent Email" type="email" value={form.parent_email||""} onChange={(e)=>setForm({...form, parent_email: e.target.value})} />
             <TextField label="Blood Group" value={form.blood_group||""} onChange={(e)=>setForm({...form, blood_group: e.target.value})} />
 
-            <Box sx={{ gridColumn: "1 / -1", display:"flex", gap:2, alignItems:"center" }}>
+            <Box sx={{ gridColumn:"1 / -1", display:"flex", gap:2, alignItems:"center" }}>
               <input accept="image/*" id="student-photo" type="file" style={{ display:"none" }} onChange={handleFileChange} />
-              <label htmlFor="student-photo"><Button variant="outlined" component="span">Choose Photo</Button></label>
-              {previewUrl ? <Avatar src={previewUrl} sx={{ width:64, height:64 }} /> : <Avatar sx={{ width:64, height:64 }}>{form.name?form.name.charAt(0):"?"}</Avatar>}
-              <Box sx={{ flex:1 }}><Typography variant="body2">Selected: {selectedFile ? selectedFile.name : "No file"}</Typography></Box>
+              <label htmlFor="student-photo">
+                <Button variant="outlined" component="span">Choose Photo</Button>
+              </label>
+
+              {previewUrl ? (
+                <Avatar src={previewUrl} sx={{ width:64, height:64 }} />
+              ) : (
+                <Avatar sx={{ width:64, height:64 }}>{form.name?form.name.charAt(0):"?"}</Avatar>
+              )}
+
+              <Box sx={{ flex:1 }}>
+                <Typography variant="body2">Selected: {selectedFile ? selectedFile.name : "No file"}</Typography>
+              </Box>
             </Box>
           </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setOpen(false)} disabled={saving}>Cancel</Button>
-          <Button variant="contained" onClick={handleSave} disabled={saving}>{saving ? <CircularProgress size={20} /> : (editingId ? "Update":"Save")}</Button>
+          <Button onClick={()=>setOpen(false)} disabled={saving}>Cancel</Button>
+          <Button variant="contained" onClick={handleSave} disabled={saving}>{saving? <CircularProgress size={20} /> : (editingId ? "Update" : "Save")}</Button>
         </DialogActions>
       </Dialog>
 
-      <Snackbar open={snack.open} autoHideDuration={4000} onClose={() => setSnack({...snack, open:false})}>
-        <Alert severity={snack.severity} onClose={() => setSnack({...snack, open:false})}>{snack.message}</Alert>
+      <Snackbar open={snack.open} autoHideDuration={4000} onClose={()=>setSnack({...snack, open:false})}>
+        <Alert severity={snack.severity} onClose={()=>setSnack({...snack, open:false})}>{snack.message}</Alert>
       </Snackbar>
     </Box>
   );

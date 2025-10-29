@@ -1,22 +1,21 @@
 # backend/src/api/routes/students.py
-import os
 import uuid
-from datetime import datetime
 from fastapi import APIRouter, Depends, UploadFile, File, Form, HTTPException
 from sqlalchemy.orm import Session
-import io
+from datetime import datetime
 
 from db.db import get_db
 from models.student_model import Student
 from schemas.student_schema import StudentResponse
-from services.minio_service import upload_fileobj
+from services.minio_service import upload_file_and_get_url, remove_url_object
 
 router = APIRouter()
 
+
 @router.get("/", response_model=list[StudentResponse])
 def list_students(db: Session = Depends(get_db)):
-    students = db.query(Student).order_by(Student.id.desc()).all()
-    return students
+    return db.query(Student).order_by(Student.id.desc()).all()
+
 
 @router.post("/", response_model=StudentResponse)
 async def create_student(
@@ -31,19 +30,16 @@ async def create_student(
     photo: UploadFile = File(None),
     db: Session = Depends(get_db),
 ):
-    # check uniqueness
     exists = db.query(Student).filter(Student.unique_number == unique_number).first()
     if exists:
         raise HTTPException(status_code=400, detail="unique_number already exists")
 
     photo_url = None
     if photo:
-        # Build object name and upload
         ext = photo.filename.split(".")[-1] if "." in photo.filename else "jpg"
         object_name = f"students/{uuid.uuid4()}.{ext}"
-        # UploadFile.file is a SpooledTemporaryFile with read()
         photo.file.seek(0)
-        photo_url = upload_fileobj(photo.file, object_name, photo.content_type)
+        photo_url = upload_file_and_get_url(photo.file, object_name, photo.content_type)
 
     new_student = Student(
         name=name,
@@ -61,6 +57,7 @@ async def create_student(
     db.commit()
     db.refresh(new_student)
     return new_student
+
 
 @router.put("/{student_id}", response_model=StudentResponse)
 async def update_student(
@@ -85,39 +82,45 @@ async def update_student(
         if other:
             raise HTTPException(status_code=400, detail="unique_number already exists")
 
-    if name is not None:
-        student.name = name
-    if unique_number is not None:
-        student.unique_number = unique_number
-    if classroom is not None:
-        student.classroom = classroom
-    if class_name is not None:
-        student.class_name = class_name
-    if parent_contact is not None:
-        student.parent_contact = parent_contact
-    if parent_email is not None:
-        student.parent_email = parent_email
-    if contact_number is not None:
-        student.contact_number = contact_number
-    if blood_group is not None:
-        student.blood_group = blood_group
+    if name: student.name = name
+    if unique_number: student.unique_number = unique_number
+    if classroom: student.classroom = classroom
+    if class_name: student.class_name = class_name
+    if parent_contact: student.parent_contact = parent_contact
+    if parent_email: student.parent_email = parent_email
+    if contact_number: student.contact_number = contact_number
+    if blood_group: student.blood_group = blood_group
 
     if photo:
+        if student.photo_url:
+            try:
+                remove_url_object(student.photo_url)
+            except Exception:
+                pass
+
         ext = photo.filename.split(".")[-1] if "." in photo.filename else "jpg"
         object_name = f"students/{uuid.uuid4()}.{ext}"
         photo.file.seek(0)
-        photo_url = upload_fileobj(photo.file, object_name, photo.content_type)
-        student.photo_url = photo_url
+        new_url = upload_file_and_get_url(photo.file, object_name, photo.content_type)
+        student.photo_url = new_url
 
     db.commit()
     db.refresh(student)
     return student
+
 
 @router.delete("/{student_id}")
 def delete_student(student_id: int, db: Session = Depends(get_db)):
     student = db.query(Student).filter(Student.id == student_id).first()
     if not student:
         raise HTTPException(status_code=404, detail="Student not found")
+
+    if student.photo_url:
+        try:
+            remove_url_object(student.photo_url)
+        except Exception:
+            pass
+
     db.delete(student)
     db.commit()
     return {"message": "Student deleted successfully"}
