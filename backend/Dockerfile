@@ -6,15 +6,26 @@ WORKDIR /app
 # Install build dependencies and curl for health checks
 RUN apt-get update && apt-get install -y \
     build-essential \
-    libpq-dev \
-    curl \
+    cmake \
+    g++ \
+    libboost-all-dev \
+    libopenblas-dev \
+    liblapack-dev \
+    libx11-dev \
+    libgtk-3-dev \
+    python3-dev \
+    libjpeg-dev \
+    libpng-dev \
     && rm -rf /var/lib/apt/lists/*
+
 
 # Copy the requirements file
 COPY requirements.txt .
 
 # Install the dependencies
-RUN pip install --no-cache-dir -r requirements.txt
+# Upgrade pip and install Python packages
+RUN pip install --upgrade pip setuptools wheel \
+    && pip install --no-cache-dir -r requirements.txt
 
 # Copy the application code
 COPY ./src ./src

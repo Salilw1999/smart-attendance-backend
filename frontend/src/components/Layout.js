@@ -17,6 +17,7 @@ import {
   Dashboard,
   People,
   EventNote,
+  School,      // ✅ new icon for Class Attendance
   ExitToApp,
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -30,15 +31,15 @@ const Layout = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
 
+  // ✅ Add Class Attendance item here
   const menuItems = [
     { text: 'Dashboard', icon: <Dashboard />, path: '/' },
     { text: 'Students', icon: <People />, path: '/students' },
     { text: 'Attendance', icon: <EventNote />, path: '/attendance' },
+    { text: 'Class Attendance', icon: <School />, path: '/class-attendance' },
   ];
 
-  const handleDrawerToggle = () => {
-    setMobileOpen(!mobileOpen);
-  };
+  const handleDrawerToggle = () => setMobileOpen(!mobileOpen);
 
   const handleNavigation = (path) => {
     navigate(path);
@@ -60,8 +61,22 @@ const Layout = ({ children }) => {
             key={item.text}
             onClick={() => handleNavigation(item.path)}
             selected={location.pathname === item.path}
+            sx={{
+              backgroundColor:
+                location.pathname === item.path ? 'rgba(25, 118, 210, 0.1)' : 'inherit',
+              '&.Mui-selected': {
+                color: '#1976d2',
+                fontWeight: 'bold',
+              },
+            }}
           >
-            <ListItemIcon>{item.icon}</ListItemIcon>
+            <ListItemIcon
+              sx={{
+                color: location.pathname === item.path ? '#1976d2' : 'inherit',
+              }}
+            >
+              {item.icon}
+            </ListItemIcon>
             <ListItemText primary={item.text} />
           </ListItem>
         ))}
@@ -97,23 +112,15 @@ const Layout = ({ children }) => {
         </Toolbar>
       </AppBar>
 
-      <Box
-        component="nav"
-        sx={{ width: { sm: drawerWidth }, flexShrink: { sm: 0 } }}
-      >
+      <Box component="nav" sx={{ width: { sm: drawerWidth }, flexShrink: { sm: 0 } }}>
         <Drawer
           variant="temporary"
           open={mobileOpen}
           onClose={handleDrawerToggle}
-          ModalProps={{
-            keepMounted: true,
-          }}
+          ModalProps={{ keepMounted: true }}
           sx={{
             display: { xs: 'block', sm: 'none' },
-            '& .MuiDrawer-paper': {
-              boxSizing: 'border-box',
-              width: drawerWidth,
-            },
+            '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth },
           }}
         >
           {drawer}
@@ -122,10 +129,7 @@ const Layout = ({ children }) => {
           variant="permanent"
           sx={{
             display: { xs: 'none', sm: 'block' },
-            '& .MuiDrawer-paper': {
-              boxSizing: 'border-box',
-              width: drawerWidth,
-            },
+            '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth },
           }}
           open
         >

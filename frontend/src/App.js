@@ -8,10 +8,12 @@ import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Students from './pages/Students';
 import Attendance from './pages/Attendance';
+import ClassAttendance from './pages/ClassAttendance';
 
 // Components
 import Layout from './components/Layout';
 
+// ✅ Private route wrapper
 const PrivateRoute = ({ children }) => {
   const { isAuthenticated } = useAuth();
   return isAuthenticated ? children : <Navigate to="/login" replace />;
@@ -75,7 +77,19 @@ function App() {
               }
             />
 
-            {/* Any unknown route */}
+            {/* ✅ Class Attendance */}
+            <Route
+              path="/class-attendance"
+              element={
+                <PrivateRoute>
+                  <Layout>
+                    <ClassAttendance />
+                  </Layout>
+                </PrivateRoute>
+              }
+            />
+
+            {/* ✅ Catch-all redirect */}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </Router>
