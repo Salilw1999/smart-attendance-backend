@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
-from datetime import datetime
+from datetime import datetime, date
 from pydantic import BaseModel
 
 from db.db import get_db
@@ -18,59 +18,61 @@ class AttendanceRequest(BaseModel):
     status: str
 
 
-# ✅ Fetch students by class & classroom
+# ✅ Flexible student fetching by class & classroom
 @router.get("/students")
 def get_students_for_class(
-    class_id: int = Query(..., description="Selected Class ID"),
-    classroom_id: int = Query(..., description="Selected Classroom ID"),
+    class_id: int | None = Query(None, description="Optional Class ID"),
+    classroom_id: int | None = Query(None, description="Optional Classroom ID"),
     db: Session = Depends(get_db),
 ):
     """
-    Get all students for a specific class and classroom.
+    Get students filtered by class, classroom, or both.
+    Works with any combination:
+    - Only class_id
+    - Only classroom_id
+    - Both class_id & classroom_id
     """
-    # Check class and classroom validity
-    selected_class = db.query(Class).filter(Class.id == class_id).first()
-    if not selected_class:
-        raise HTTPException(status_code=404, detail="Class not found")
 
-    selected_classroom = (
-        db.query(Classroom)
-        .filter(Classroom.id == classroom_id, Classroom.class_id == class_id)
-        .first()
-    )
-    if not selected_classroom:
-        raise HTTPException(status_code=404, detail="Classroom not found for this class")
+    query = db.query(Student)
 
-    # ✅ Properly filter students by both class and classroom
-    students = (
-        db.query(Student)
-        .filter(Student.class_id == class_id, Student.classroom_id == classroom_id)
-        .order_by(Student.name.asc())
-        .all()
-    )
+    if class_id is not None:
+        query = query.filter(Student.class_id == class_id)
 
-    # ✅ If no students found
+    if classroom_id is not None:
+        query = query.filter(Student.classroom_id == classroom_id)
+
+    students = query.order_by(Student.name.asc()).all()
+
     if not students:
-        return {
-            "message": f"No students found in {selected_class.name} - {selected_classroom.name}"
-        }
+        return {"message": "No students found for given filter"}
 
-    # ✅ Return structured student list
-    return [
-        {
+    result = []
+    for s in students:
+        class_name = (
+            db.query(Class.name).filter(Class.id == s.class_id).scalar()
+            if s.class_id
+            else None
+        )
+        classroom_name = (
+            db.query(Classroom.name).filter(Classroom.id == s.classroom_id).scalar()
+            if s.classroom_id
+            else None
+        )
+
+        result.append({
             "id": s.id,
             "unique_number": s.unique_number,
             "name": s.name,
             "class_id": s.class_id,
-            "class_name": selected_class.name,
+            "class_name": class_name,
             "classroom_id": s.classroom_id,
-            "classroom_name": selected_classroom.name,
-        }
-        for s in students
-    ]
+            "classroom_name": classroom_name,
+        })
+
+    return result
 
 
-# ✅ Mark manual attendance (create or update)
+# ✅ Mark or update attendance
 @router.post("/")
 def mark_manual_attendance(data: AttendanceRequest, db: Session = Depends(get_db)):
     """
@@ -80,22 +82,20 @@ def mark_manual_attendance(data: AttendanceRequest, db: Session = Depends(get_db
     if not student:
         raise HTTPException(status_code=404, detail="Student not found")
 
-    today = datetime.now().date()
+    today = date.today()
 
-    # ✅ Check if already exists for today
     existing = (
         db.query(Attendance)
         .filter(Attendance.student_id == data.student_id, Attendance.date == today)
         .first()
     )
 
-    # ✅ Update if exists
     if existing:
         existing.status = data.status
         db.commit()
         db.refresh(existing)
         return {
-            "message": f"Updated {student.name}'s attendance to '{data.status}'",
+            "message": f"✅ Updated {student.name}'s attendance to '{data.status}'",
             "student_id": student.id,
             "student_name": student.name,
             "class_id": student.class_id,
@@ -104,7 +104,6 @@ def mark_manual_attendance(data: AttendanceRequest, db: Session = Depends(get_db
             "status": data.status,
         }
 
-    # ✅ Create new attendance entry
     new_att = Attendance(
         student_id=data.student_id,
         date=today,
@@ -117,7 +116,7 @@ def mark_manual_attendance(data: AttendanceRequest, db: Session = Depends(get_db
     db.refresh(new_att)
 
     return {
-        "message": f"Marked {student.name} as '{data.status}'",
+        "message": f"✅ Marked {student.name} as '{data.status}'",
         "student_id": student.id,
         "student_name": student.name,
         "class_id": student.class_id,
@@ -125,3 +124,42 @@ def mark_manual_attendance(data: AttendanceRequest, db: Session = Depends(get_db
         "date": str(today),
         "status": data.status,
     }
+
+
+# ✅ View saved attendance records
+@router.get("")
+def get_attendance_records(
+    class_id: int | None = Query(None, description="Filter by class ID"),
+    classroom_id: int | None = Query(None, description="Filter by classroom ID"),
+    db: Session = Depends(get_db),
+):
+    """
+    View attendance records with optional filters for class and classroom.
+    """
+    query = (
+        db.query(Attendance, Student, Class, Classroom)
+        .join(Student, Attendance.student_id == Student.id)
+        .outerjoin(Class, Student.class_id == Class.id)
+        .outerjoin(Classroom, Student.classroom_id == Classroom.id)
+    )
+
+    if class_id:
+        query = query.filter(Student.class_id == class_id)
+    if classroom_id:
+        query = query.filter(Student.classroom_id == classroom_id)
+
+    records = query.order_by(Attendance.date.desc()).all()
+
+    result = []
+    for a, s, c, r in records:
+        result.append({
+            "student_id": s.id,
+            "student_name": s.name,
+            "unique_number": s.unique_number,
+            "class_name": c.name if c else None,
+            "classroom_name": r.name if r else None,
+            "date": str(a.date),
+            "status": a.status,
+        })
+
+    return result

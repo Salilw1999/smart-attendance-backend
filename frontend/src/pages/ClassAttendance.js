@@ -29,13 +29,13 @@ export default function ClassAttendance() {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  // ✅ Load all classes and classrooms together
+  // ✅ Load all classes and classrooms on mount
   useEffect(() => {
     const fetchData = async () => {
       try {
         const [classRes, roomRes] = await Promise.all([
           api.get("/api/classes"),
-          api.get("/api/classrooms"), // no filter
+          api.get("/api/classrooms"),
         ]);
         setClassList(classRes.data);
         setRoomList(roomRes.data);
@@ -46,29 +46,43 @@ export default function ClassAttendance() {
     fetchData();
   }, []);
 
-  // ✅ Load students for selected class & classroom
-  const handleLoadStudents = async () => {
-    if (!selectedClass || !selectedRoom) return;
-    setLoading(true);
-    try {
-      const res = await api.get(
-        `/attendance/manual/students?class_id=${selectedClass}&classroom_id=${selectedRoom}`
-      );
-
-      if (res.data.message) {
+  // ✅ Load students automatically when class or classroom changes
+  useEffect(() => {
+    const fetchStudents = async () => {
+      // if neither filter selected, skip
+      if (!selectedClass && !selectedRoom) {
         setStudents([]);
-      } else {
-        setStudents(res.data);
-        const init = {};
-        res.data.forEach((s) => (init[s.id] = "Present"));
-        setAttendance(init);
+        return;
       }
-    } catch (err) {
-      console.error("Error loading students:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
+
+      setLoading(true);
+      try {
+        // Build query params dynamically
+        const params = [];
+        if (selectedClass) params.push(`class_id=${selectedClass}`);
+        if (selectedRoom) params.push(`classroom_id=${selectedRoom}`);
+        const query = params.length ? `?${params.join("&")}` : "";
+
+        const res = await api.get(`/attendance/manual/students${query}`);
+
+        if (res.data.message || !res.data.length) {
+          setStudents([]);
+        } else {
+          setStudents(res.data);
+          // initialize default attendance
+          const init = {};
+          res.data.forEach((s) => (init[s.id] = "Present"));
+          setAttendance(init);
+        }
+      } catch (err) {
+        console.error("Error loading students:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStudents();
+  }, [selectedClass, selectedRoom]); // 👈 re-fetch whenever these change
 
   // ✅ Change attendance status
   const handleStatusChange = (id, status) => {
@@ -110,6 +124,7 @@ export default function ClassAttendance() {
             value={selectedClass}
             onChange={(e) => setSelectedClass(e.target.value)}
           >
+            <MenuItem value="">All Classes</MenuItem>
             {classList.map((c) => (
               <MenuItem key={c.id} value={c.id}>
                 {c.name}
@@ -125,6 +140,7 @@ export default function ClassAttendance() {
             value={selectedRoom}
             onChange={(e) => setSelectedRoom(e.target.value)}
           >
+            <MenuItem value="">All Classrooms</MenuItem>
             {roomList.map((r) => (
               <MenuItem key={r.id} value={r.id}>
                 {r.name}
@@ -132,19 +148,12 @@ export default function ClassAttendance() {
             ))}
           </Select>
         </FormControl>
-
-        {/* Load Students */}
-        <Button
-          variant="contained"
-          onClick={handleLoadStudents}
-          disabled={!selectedClass || !selectedRoom || loading}
-        >
-          {loading ? <CircularProgress size={20} /> : "Load Students"}
-        </Button>
       </Box>
 
       {/* Students Table */}
-      {students.length > 0 ? (
+      {loading ? (
+        <CircularProgress />
+      ) : students.length > 0 ? (
         <Box>
           <TableContainer component={Paper}>
             <Table>
@@ -195,7 +204,7 @@ export default function ClassAttendance() {
         </Box>
       ) : (
         <Alert severity="info" sx={{ mt: 2 }}>
-          No students loaded yet.
+          No students found for the selected filters.
         </Alert>
       )}
     </Box>
