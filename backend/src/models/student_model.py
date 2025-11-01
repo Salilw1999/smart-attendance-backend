@@ -10,17 +10,16 @@ class Student(Base):
     name = Column(String, nullable=False)
     unique_number = Column(String, nullable=False, unique=True)
 
-    # ✅ Fix: store both IDs and names
-    class_id = Column(Integer, ForeignKey("classes.id"))
-    classroom_id = Column(Integer, ForeignKey("classrooms.id"))
+    class_id = Column(Integer, ForeignKey("classes.id"), nullable=False)
+    classroom_id = Column(Integer, ForeignKey("classrooms.id"), nullable=False)
     class_name = Column(String)
     classroom_name = Column(String)
-
     parent_contact = Column(String)
     parent_email = Column(String)
     contact_number = Column(String)
     blood_group = Column(String)
     photo_url = Column(String)
+    face_embedding = Column(String)
     created_at = Column(DateTime, default=datetime.utcnow)
 
     # ✅ Relationships

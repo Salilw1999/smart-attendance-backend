@@ -1,4 +1,6 @@
--- Create users table
+------------------------------------------------------------
+-- USERS TABLE
+------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,
     username VARCHAR(50) UNIQUE NOT NULL,
@@ -10,7 +12,7 @@ CREATE TABLE IF NOT EXISTS users (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- Create admin user with default password 'admin'
+-- Default admin user (password: admin)
 INSERT INTO users (username, email, full_name, hashed_password, is_active, is_superuser)
 VALUES (
     'admin',
@@ -22,10 +24,8 @@ VALUES (
 ) ON CONFLICT (username) DO NOTHING;
 
 ------------------------------------------------------------
--- CLASS & CLASSROOM TABLES
+-- CLASSES TABLE
 ------------------------------------------------------------
-
--- Classes table
 CREATE TABLE IF NOT EXISTS classes (
     id SERIAL PRIMARY KEY,
     name VARCHAR(100) UNIQUE NOT NULL,
@@ -47,27 +47,30 @@ VALUES
     ('10th')
 ON CONFLICT (name) DO NOTHING;
 
--- Classrooms table
+------------------------------------------------------------
+-- CLASSROOMS TABLE (Linked to classes)
+------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS classrooms (
     id SERIAL PRIMARY KEY,
-    name VARCHAR(100) UNIQUE NOT NULL,
+    name VARCHAR(100) NOT NULL,
     location VARCHAR(255),
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    class_id INTEGER NOT NULL REFERENCES classes(id) ON DELETE CASCADE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (name, class_id) -- Prevent duplicate room names within same class
 );
 
--- Insert sample classrooms
-INSERT INTO classrooms (name, location)
+-- Insert sample classrooms linked to classes
+INSERT INTO classrooms (name, location, class_id)
 VALUES
-    ('Room A', 'First Floor'),
-    ('Room B', 'First Floor'),
-    ('Room C', 'Second Floor'),
-    ('Room D', 'Second Floor')
-ON CONFLICT (name) DO NOTHING;
+    ('Room A', 'First Floor', 1),
+    ('Room B', 'First Floor', 1),
+    ('Room C', 'Second Floor', 2),
+    ('Room D', 'Second Floor', 3)
+ON CONFLICT (name, class_id) DO NOTHING;
 
 ------------------------------------------------------------
--- STUDENTS TABLE (linked to class + classroom)
+-- STUDENTS TABLE
 ------------------------------------------------------------
-
 CREATE TABLE IF NOT EXISTS students (
     id SERIAL PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
@@ -90,7 +93,6 @@ CREATE INDEX IF NOT EXISTS idx_students_classroom_id ON students(classroom_id);
 ------------------------------------------------------------
 -- ATTENDANCE TABLE
 ------------------------------------------------------------
-
 CREATE TABLE IF NOT EXISTS attendance (
     id SERIAL PRIMARY KEY,
     student_id INTEGER REFERENCES students(id) ON DELETE CASCADE,
@@ -100,16 +102,19 @@ CREATE TABLE IF NOT EXISTS attendance (
     confidence_score FLOAT
 );
 
--- Indexes for Attendance Table
+-- Indexes
 CREATE INDEX IF NOT EXISTS idx_attendance_student_id ON attendance(student_id);
 CREATE INDEX IF NOT EXISTS idx_attendance_status ON attendance(status);
 CREATE INDEX IF NOT EXISTS idx_attendance_date ON attendance(date);
 
 ------------------------------------------------------------
--- SAMPLE STUDENT DATA (optional)
+-- SAMPLE STUDENTS
 ------------------------------------------------------------
 INSERT INTO students (name, unique_number, class_id, classroom_id, parent_contact, parent_email, contact_number, blood_group)
 VALUES
 ('Rohit Sharma', 'STU001', 1, 1, '9999988888', 'parent1@example.com', '8888899999', 'O+'),
-('Priya Singh', 'STU002', 2, 2, '7777766666', 'parent2@example.com', '6666677777', 'A+')
+('Priya Singh', 'STU002', 2, 3, '7777766666', 'parent2@example.com', '6666677777', 'A+')
 ON CONFLICT (unique_number) DO NOTHING;
+
+ALTER TABLE students ADD COLUMN class_name VARCHAR;
+ALTER TABLE students ADD COLUMN classroom_name VARCHAR;

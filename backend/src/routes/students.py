@@ -4,7 +4,7 @@ import numpy as np
 import face_recognition
 from io import BytesIO
 from PIL import Image, UnidentifiedImageError
-from fastapi import APIRouter, Depends, UploadFile, File, Form, HTTPException, status
+from fastapi import APIRouter, Depends, UploadFile, File, Form, HTTPException, status, Query
 from sqlalchemy.orm import Session
 from db.db import get_db
 from models.student_model import Student
@@ -15,10 +15,19 @@ from services.minio_service import upload_file_to_minio, remove_url_object
 
 router = APIRouter(prefix="/api/students", tags=["Students"])
 
-# ✅ Fetch all students
+# ✅ Fetch all or filtered students
 @router.get("/", response_model=list[StudentResponse])
-def get_students(db: Session = Depends(get_db)):
-    return db.query(Student).all()
+def get_students(
+    class_id: int = Query(None),
+    classroom_id: int = Query(None),
+    db: Session = Depends(get_db),
+):
+    query = db.query(Student)
+    if class_id:
+        query = query.filter(Student.class_id == class_id)
+    if classroom_id:
+        query = query.filter(Student.classroom_id == classroom_id)
+    return query.all()
 
 
 # ✅ Create new student
