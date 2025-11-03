@@ -20,7 +20,9 @@ export default function Students() {
   const emptyForm = {
     name: "",
     unique_number: "",
+    class_id: "",
     class_name: "",
+    classroom_id: "",
     classroom_name: "",
     parent_contact: "",
     parent_email: "",
@@ -78,7 +80,9 @@ export default function Students() {
     setForm({
       name: s.name || "",
       unique_number: s.unique_number || "",
+      class_id: s.class_id || "",
       class_name: s.class_name || "",
+      classroom_id: s.classroom_id || "",
       classroom_name: s.classroom_name || "",
       parent_contact: s.parent_contact || "",
       parent_email: s.parent_email || "",
@@ -111,11 +115,18 @@ export default function Students() {
 
     setSaving(true);
     try {
+      const selectedClass = classOptions.find(c => c.id === parseInt(form.class_id));
+      const selectedRoom = classroomOptions.find(r => r.id === parseInt(form.classroom_id));
+
       const fd = new FormData();
       fd.append("name", form.name);
       fd.append("unique_number", form.unique_number);
-      if (form.class_name) fd.append("class_name", form.class_name);
-      if (form.classroom_name) fd.append("classroom_name", form.classroom_name);
+
+      if (form.class_id) fd.append("class_id", form.class_id);
+      if (form.classroom_id) fd.append("classroom_id", form.classroom_id);
+      if (selectedClass) fd.append("class_name", selectedClass.name);
+      if (selectedRoom) fd.append("classroom_name", selectedRoom.name);
+
       if (form.parent_contact) fd.append("parent_contact", form.parent_contact);
       if (form.parent_email) fd.append("parent_email", form.parent_email);
       if (form.contact_number) fd.append("contact_number", form.contact_number);
@@ -126,12 +137,12 @@ export default function Students() {
         await api.put(`/api/students/${editingId}`, fd, {
           headers: { "Content-Type": "multipart/form-data" },
         });
-        showSnack("Student updated", "success");
+        showSnack("Student updated successfully", "success");
       } else {
         await api.post("/api/students", fd, {
           headers: { "Content-Type": "multipart/form-data" },
         });
-        showSnack("Student created", "success");
+        showSnack("Student created successfully", "success");
       }
 
       setOpen(false);
@@ -268,33 +279,47 @@ export default function Students() {
               required
             />
 
+            {/* Class Dropdown */}
             <TextField
               select
               label="Class"
-              value={form.class_name || ""}
-              onChange={(e) => setForm({ ...form, class_name: e.target.value })}
+              value={form.class_id || ""}
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  class_id: e.target.value,
+                  class_name: classOptions.find(c => c.id === parseInt(e.target.value))?.name || "",
+                })
+              }
             >
               <MenuItem value="">
                 <em>None</em>
               </MenuItem>
               {classOptions.map((c) => (
-                <MenuItem key={c.id} value={c.name}>
+                <MenuItem key={c.id} value={c.id}>
                   {c.name}
                 </MenuItem>
               ))}
             </TextField>
 
+            {/* Classroom Dropdown */}
             <TextField
               select
               label="Classroom"
-              value={form.classroom_name || ""}
-              onChange={(e) => setForm({ ...form, classroom_name: e.target.value })}
+              value={form.classroom_id || ""}
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  classroom_id: e.target.value,
+                  classroom_name: classroomOptions.find(r => r.id === parseInt(e.target.value))?.name || "",
+                })
+              }
             >
               <MenuItem value="">
                 <em>None</em>
               </MenuItem>
               {classroomOptions.map((r) => (
-                <MenuItem key={r.id} value={r.name}>
+                <MenuItem key={r.id} value={r.id}>
                   {r.name}
                 </MenuItem>
               ))}

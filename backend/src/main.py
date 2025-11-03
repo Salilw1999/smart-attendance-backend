@@ -15,7 +15,7 @@ from api.routes.students import router as students_router
 from api.routes.camera_process import router as camera_process_router
 from api.routes.class_routes import router as class_router
 from api.routes.classroom_routes import router as classroom_router
-from api.routes.manual_attendance import router as manual_attendance_router  # ✅ ADD THIS
+from api.routes.manual_attendance import router as manual_attendance_router
 from routes.upload_router import router as upload_router
 
 # DB
@@ -23,6 +23,7 @@ from db.db import init_db
 
 # Services
 from services.process_cameras import run_camera_pass
+
 
 # -----------------------------------
 # APP CONFIGURATION
@@ -32,7 +33,7 @@ app = FastAPI(title="Student Attendance API")
 # ✅ CORS setup
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  
+    allow_origins=["*"],  # Allow all origins — adjust if needed
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -40,7 +41,7 @@ app.add_middleware(
 
 # ✅ Scheduler (runs every hour)
 scheduler = BackgroundScheduler()
-scheduler.add_job(run_camera_pass, 'cron', minute=0)
+scheduler.add_job(run_camera_pass, "cron", minute=0)
 scheduler.start()
 atexit.register(lambda: scheduler.shutdown())
 
@@ -49,7 +50,12 @@ atexit.register(lambda: scheduler.shutdown())
 def startup_event():
     init_db()
 
-# ✅ Routers
+
+# -----------------------------------
+# ROUTER REGISTRATION (Clean prefixes)
+# -----------------------------------
+
+# Each router file should have router = APIRouter()  (no prefix inside the file)
 app.include_router(attendance_router, prefix="/api/attendance", tags=["Attendance"])
 app.include_router(auth_router, prefix="/api/auth", tags=["Auth"])
 app.include_router(students_router, prefix="/api/students", tags=["Students"])

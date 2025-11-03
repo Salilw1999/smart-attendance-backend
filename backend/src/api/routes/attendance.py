@@ -1,6 +1,7 @@
-from fastapi import APIRouter, HTTPException, UploadFile, File, Form, Depends
+from fastapi import APIRouter, HTTPException, UploadFile, File, Form, Depends, Query
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
+from datetime import datetime
 from db.db import get_db
 from services.attendance_service import (
     create_attendance_record,
@@ -25,26 +26,50 @@ def add_attendance(attendance: AttendanceCreate, db: Session = Depends(get_db)):
         raise HTTPException(status_code=400, detail=f"Failed to add attendance: {str(e)}")
 
 
-# ✅ Get all attendance records
+# ✅ Get all attendance records (with optional filters)
 @router.get("/", response_model=list[AttendanceResponse])
-def list_attendance(db: Session = Depends(get_db)):
+def list_attendance(
+    db: Session = Depends(get_db),
+    class_id: int | None = Query(None, description="Filter by class ID"),
+    classroom_id: int | None = Query(None, description="Filter by classroom ID"),
+    start_date: datetime | None = Query(None, description="Filter start date (YYYY-MM-DD)"),
+    end_date: datetime | None = Query(None, description="Filter end date (YYYY-MM-DD)"),
+):
     """
-    Fetch all attendance records.
+    Fetch attendance records with optional filters.
     """
     try:
-        return get_attendance_records(db=db)
+        return get_attendance_records(
+            db=db,
+            class_id=class_id,
+            classroom_id=classroom_id,
+            start_date=start_date,
+            end_date=end_date,
+        )
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Failed to fetch attendance: {str(e)}")
 
 
-# ✅ Export attendance to Excel
+# ✅ Export attendance to Excel (with optional filters)
 @router.get("/export")
-def export_attendance(db: Session = Depends(get_db)):
+def export_attendance(
+    db: Session = Depends(get_db),
+    class_id: int | None = Query(None),
+    classroom_id: int | None = Query(None),
+    start_date: datetime | None = Query(None),
+    end_date: datetime | None = Query(None),
+):
     """
-    Export all attendance records to an Excel file.
+    Export attendance records (optionally filtered) to an Excel file.
     """
     try:
-        file_path = export_attendance_to_excel(db=db)
+        file_path = export_attendance_to_excel(
+            db=db,
+            class_id=class_id,
+            classroom_id=classroom_id,
+            start_date=start_date,
+            end_date=end_date,
+        )
         return FileResponse(
             path=file_path,
             filename="attendance_records.xlsx",

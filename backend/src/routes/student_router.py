@@ -11,7 +11,29 @@ router = APIRouter(prefix="/api/students", tags=["Students"])
 UPLOAD_DIR = "uploads/students"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
-# Create student (supports multipart form)
+
+# ✅ GET all students
+@router.get("/", response_model=list)
+def get_students(db: Session = Depends(get_db)):
+    students = db.query(Student).all()
+    return [
+        {
+            "id": s.id,
+            "name": s.name,
+            "unique_number": s.unique_number,
+            "class_name": s.class_name,
+            "classroom_name": s.classroom,
+            "parent_contact": s.parent_contact,
+            "parent_email": s.parent_email,
+            "contact_number": s.contact_number,
+            "blood_group": s.blood_group,
+            "photo_url": s.photo_url,
+        }
+        for s in students
+    ]
+
+
+# ✅ POST create student
 @router.post("/", response_model=dict)
 def create_student(
     name: str = Form(...),
@@ -25,12 +47,11 @@ def create_student(
     photo: UploadFile = File(None),
     db: Session = Depends(get_db)
 ):
-    # Check if unique_number already exists
+    # Check duplicate unique_number
     existing = db.query(Student).filter(Student.unique_number == unique_number).first()
     if existing:
         raise HTTPException(status_code=400, detail="Unique number already exists")
 
-    # Save photo if provided
     photo_url = None
     if photo:
         filename = f"{unique_number}_{photo.filename}"
@@ -39,7 +60,6 @@ def create_student(
             shutil.copyfileobj(photo.file, buffer)
         photo_url = f"/{file_path}"
 
-    # Create new student
     new_student = Student(
         name=name,
         unique_number=unique_number,
@@ -52,7 +72,6 @@ def create_student(
         photo_url=photo_url,
         created_at=datetime.utcnow(),
     )
-
     db.add(new_student)
     db.commit()
     db.refresh(new_student)
@@ -71,7 +90,7 @@ def create_student(
     }
 
 
-# Update student
+# ✅ PUT update student
 @router.put("/{student_id}", response_model=dict)
 def update_student(
     student_id: int,
@@ -90,7 +109,6 @@ def update_student(
     if not student:
         raise HTTPException(status_code=404, detail="Student not found")
 
-    # Update photo if provided
     if photo:
         filename = f"{unique_number}_{photo.filename}"
         file_path = os.path.join(UPLOAD_DIR, filename)
@@ -122,3 +140,15 @@ def update_student(
         "blood_group": student.blood_group,
         "photo_url": student.photo_url,
     }
+
+
+# ✅ DELETE student
+@router.delete("/{student_id}", response_model=dict)
+def delete_student(student_id: int, db: Session = Depends(get_db)):
+    student = db.query(Student).filter(Student.id == student_id).first()
+    if not student:
+        raise HTTPException(status_code=404, detail="Student not found")
+
+    db.delete(student)
+    db.commit()
+    return {"message": "Student deleted successfully", "id": student_id}

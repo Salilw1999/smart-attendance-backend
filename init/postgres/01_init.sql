@@ -118,3 +118,6 @@ ON CONFLICT (unique_number) DO NOTHING;
 
 ALTER TABLE students ADD COLUMN class_name VARCHAR;
 ALTER TABLE students ADD COLUMN classroom_name VARCHAR;
+ALTER TABLE attendances ADD COLUMN IF NOT EXISTS class_name VARCHAR;
+ALTER TABLE attendances ADD COLUMN IF NOT EXISTS classroom_name VARCHAR;
+ALTER TABLE attendances ADD COLUMN IF NOT EXISTS time VARCHAR;

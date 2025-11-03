@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
-from datetime import datetime, date
+from datetime import date, datetime
 from pydantic import BaseModel
 
 from db.db import get_db
@@ -9,55 +9,36 @@ from models.attendance_model import Attendance
 from models.class_model import Class
 from models.classroom_model import Classroom
 
-router = APIRouter(prefix="/attendance/manual", tags=["Manual Attendance"])
+router = APIRouter()  # ✅ no prefix here
 
 
-# ✅ Request model for marking attendance
+# ✅ Request model
 class AttendanceRequest(BaseModel):
     student_id: int
     status: str
 
 
-# ✅ Flexible student fetching by class & classroom
-@router.get("/students")
+# ✅ Get students for class/classroom
+@router.get("/attendance/manual/students")
 def get_students_for_class(
     class_id: int | None = Query(None, description="Optional Class ID"),
     classroom_id: int | None = Query(None, description="Optional Classroom ID"),
     db: Session = Depends(get_db),
 ):
-    """
-    Get students filtered by class, classroom, or both.
-    Works with any combination:
-    - Only class_id
-    - Only classroom_id
-    - Both class_id & classroom_id
-    """
-
     query = db.query(Student)
-
     if class_id is not None:
         query = query.filter(Student.class_id == class_id)
-
     if classroom_id is not None:
         query = query.filter(Student.classroom_id == classroom_id)
 
     students = query.order_by(Student.name.asc()).all()
-
     if not students:
         return {"message": "No students found for given filter"}
 
     result = []
     for s in students:
-        class_name = (
-            db.query(Class.name).filter(Class.id == s.class_id).scalar()
-            if s.class_id
-            else None
-        )
-        classroom_name = (
-            db.query(Classroom.name).filter(Classroom.id == s.classroom_id).scalar()
-            if s.classroom_id
-            else None
-        )
+        class_name = db.query(Class.name).filter(Class.id == s.class_id).scalar() if s.class_id else None
+        classroom_name = db.query(Classroom.name).filter(Classroom.id == s.classroom_id).scalar() if s.classroom_id else None
 
         result.append({
             "id": s.id,
@@ -72,17 +53,18 @@ def get_students_for_class(
     return result
 
 
-# ✅ Mark or update attendance
-@router.post("/")
+# ✅ Mark or update manual attendance
+@router.post("/attendance/manual")
 def mark_manual_attendance(data: AttendanceRequest, db: Session = Depends(get_db)):
-    """
-    Mark or update manual attendance for a student.
-    """
     student = db.query(Student).filter(Student.id == data.student_id).first()
     if not student:
         raise HTTPException(status_code=404, detail="Student not found")
 
     today = date.today()
+    now_time = datetime.now().strftime("%H:%M:%S")
+
+    class_name = db.query(Class.name).filter(Class.id == student.class_id).scalar() if student.class_id else None
+    classroom_name = db.query(Classroom.name).filter(Classroom.id == student.classroom_id).scalar() if student.classroom_id else None
 
     existing = (
         db.query(Attendance)
@@ -99,8 +81,11 @@ def mark_manual_attendance(data: AttendanceRequest, db: Session = Depends(get_db
             "student_id": student.id,
             "student_name": student.name,
             "class_id": student.class_id,
+            "class_name": class_name,
             "classroom_id": student.classroom_id,
+            "classroom_name": classroom_name,
             "date": str(today),
+            "time": now_time,
             "status": data.status,
         }
 
@@ -120,14 +105,16 @@ def mark_manual_attendance(data: AttendanceRequest, db: Session = Depends(get_db
         "student_id": student.id,
         "student_name": student.name,
         "class_id": student.class_id,
+        "class_name": class_name,
         "classroom_id": student.classroom_id,
+        "classroom_name": classroom_name,
         "date": str(today),
+        "time": now_time,
         "status": data.status,
     }
 
-
 # ✅ View saved attendance records
-@router.get("")
+@router.get("/api/attendance/api/attendance/")
 def get_attendance_records(
     class_id: int | None = Query(None, description="Filter by class ID"),
     classroom_id: int | None = Query(None, description="Filter by classroom ID"),
