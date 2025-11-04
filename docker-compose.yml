@@ -10,11 +10,11 @@ services:
       - ./init/postgres:/docker-entrypoint-initdb.d
     ports:
       - "5432:5432"
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-attendance_db}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+ #   healthcheck:
+  #    test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-attendance_db}"]
+   #   interval: 10s
+    #  timeout: 5s
+    #  retries: 5
     networks:
       - attendance_net
 
@@ -57,8 +57,8 @@ services:
     ports:
       - "8888:8000"
     depends_on:
-      postgres:
-        condition: service_healthy
+   #   postgres:
+    #    condition: service_healthy
       minio:
         condition: service_healthy
     networks:
@@ -69,7 +69,7 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
     env_file:
-      - ./frontend/.env
+      - frontend/.env
     #environment:
      # - API_PROTOCOL=${API_PROTOCOL:-http}
      # - API_HOST=backend

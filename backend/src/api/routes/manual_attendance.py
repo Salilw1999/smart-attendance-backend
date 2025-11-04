@@ -114,7 +114,7 @@ def mark_manual_attendance(data: AttendanceRequest, db: Session = Depends(get_db
     }
 
 # ✅ View saved attendance records
-@router.get("/api/attendance/api/attendance/")
+@router.get("/api/attendance/records")
 def get_attendance_records(
     class_id: int | None = Query(None, description="Filter by class ID"),
     classroom_id: int | None = Query(None, description="Filter by classroom ID"),

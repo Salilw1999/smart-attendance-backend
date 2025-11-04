@@ -1,13 +1,18 @@
+import React, { useEffect, useState } from 'react';
 import { Box, Typography, Grid, Paper } from '@mui/material';
 import { styled } from '@mui/material/styles';
-import { useEffect, useState } from 'react';
-import { api } from '../services/api';
+import { api } from '../services/api'; // ✅ Make sure this file exports axios instance
 
+// Styled card container
 const StyledPaper = styled(Paper)(({ theme }) => ({
   padding: theme.spacing(3),
   display: 'flex',
   flexDirection: 'column',
+  alignItems: 'center',
+  justifyContent: 'center',
   height: '100%',
+  textAlign: 'center',
+  borderRadius: 12,
 }));
 
 const Dashboard = () => {
@@ -18,78 +23,78 @@ const Dashboard = () => {
     absentToday: 0,
   });
 
+  const [loading, setLoading] = useState(true);
+
+  // ✅ Fetch dashboard stats
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        // TODO: Replace with actual API calls when endpoints are ready
-        const studentsResponse = await api.get('/api/students/');
-        const attendanceResponse = await api.get('/api/attendance/');
-        
-        setStats({
-          totalStudents: studentsResponse.data.length,
-          todayAttendance: attendanceResponse.data.length,
-          presentToday: attendanceResponse.data.filter(a => a.status === 'present').length,
-          absentToday: attendanceResponse.data.filter(a => a.status === 'absent').length,
-        });
+        const response = await api.get('/api/attendance/api/attendance/stats');
+        setStats(response.data);
       } catch (error) {
         console.error('Error fetching dashboard stats:', error);
+      } finally {
+        setLoading(false);
       }
     };
-
     fetchStats();
   }, []);
 
   return (
     <Box sx={{ flexGrow: 1, p: 3 }}>
-      <Typography variant="h4" gutterBottom>
+      <Typography variant="h4" gutterBottom fontWeight={600}>
         Dashboard
       </Typography>
-      
-      <Grid container spacing={3}>
-        <Grid item xs={12} sm={6} md={3}>
-          <StyledPaper elevation={3}>
-            <Typography color="textSecondary" gutterBottom>
-              Total Students
-            </Typography>
-            <Typography variant="h3">
-              {stats.totalStudents}
-            </Typography>
-          </StyledPaper>
+
+      {loading ? (
+        <Typography variant="body1">Loading...</Typography>
+      ) : (
+        <Grid container spacing={3}>
+          {/* Total Students */}
+          <Grid item xs={12} sm={6} md={3}>
+            <StyledPaper elevation={4}>
+              <Typography color="textSecondary" gutterBottom>
+                Total Students
+              </Typography>
+              <Typography variant="h3">{stats.totalStudents}</Typography>
+            </StyledPaper>
+          </Grid>
+
+          {/* Today's Attendance */}
+          <Grid item xs={12} sm={6} md={3}>
+            <StyledPaper elevation={4}>
+              <Typography color="textSecondary" gutterBottom>
+                Today's Attendance
+              </Typography>
+              <Typography variant="h3">{stats.todayAttendance}</Typography>
+            </StyledPaper>
+          </Grid>
+
+          {/* Present Today */}
+          <Grid item xs={12} sm={6} md={3}>
+            <StyledPaper elevation={4}>
+              <Typography color="textSecondary" gutterBottom>
+                Present Today
+              </Typography>
+              <Typography variant="h3" color="success.main">
+                {stats.presentToday}
+              </Typography>
+            </StyledPaper>
+          </Grid>
+
+          {/* Absent Today */}
+          <Grid item xs={12} sm={6} md={3}>
+            <StyledPaper elevation={4}>
+              <Typography color="textSecondary" gutterBottom>
+                Absent Today
+              </Typography>
+              <Typography variant="h3" color="error.main">
+                {stats.absentToday}
+              </Typography>
+            </StyledPaper>
+          </Grid>
         </Grid>
-        
-        <Grid item xs={12} sm={6} md={3}>
-          <StyledPaper elevation={3}>
-            <Typography color="textSecondary" gutterBottom>
-              Today's Attendance
-            </Typography>
-            <Typography variant="h3">
-              {stats.todayAttendance}
-            </Typography>
-          </StyledPaper>
-        </Grid>
-        
-        <Grid item xs={12} sm={6} md={3}>
-          <StyledPaper elevation={3}>
-            <Typography color="textSecondary" gutterBottom>
-              Present Today
-            </Typography>
-            <Typography variant="h3" color="success.main">
-              {stats.presentToday}
-            </Typography>
-          </StyledPaper>
-        </Grid>
-        
-        <Grid item xs={12} sm={6} md={3}>
-          <StyledPaper elevation={3}>
-            <Typography color="textSecondary" gutterBottom>
-              Absent Today
-            </Typography>
-            <Typography variant="h3" color="error.main">
-              {stats.absentToday}
-            </Typography>
-          </StyledPaper>
-        </Grid>
-      </Grid>
+      )}
     </Box>
   );
 };
