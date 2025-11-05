@@ -1,21 +1,30 @@
 import axios from "axios";
 
-// --- Load dynamic config (from runtime or .env) ---
-const config = window.ENV || {};
+// --- Load environment variables (.env) ---
+const {
+  REACT_APP_URL_TYPE,
+  REACT_APP_API_PROTOCOL,
+  REACT_APP_API_HOST,
+  REACT_APP_API_PORT,
+  REACT_APP_API_PREFIX,
+} = process.env;
 
-// URLs from runtime config or environment
-const CENTRAL_API_URL = config.API_BASE_URL || process.env.REACT_APP_API_URL;
-const LOCAL_API_URL = "http://localhost:8888";
+// --- Determine base URL ---
+let API_BASE_URL = "";
 
-// Detect environment (local vs deployed)
-const isLocal =
-  window.location.hostname === "localhost" ||
-  window.location.hostname === "127.0.0.1";
-
-// Determine which backend URL to use
-const API_BASE_URL = isLocal
-  ? LOCAL_API_URL
-  : CENTRAL_API_URL || LOCAL_API_URL; // fallback if central missing
+// Case 1: Central (Production)
+if (REACT_APP_URL_TYPE === "central") {
+  API_BASE_URL = "https://test-salil.smart-iam.com/api";
+}
+// Case 2: Use .env API_HOST + PORT if provided
+else if (REACT_APP_API_HOST && REACT_APP_API_PORT) {
+  API_BASE_URL = `${REACT_APP_API_PROTOCOL || "http"}://${REACT_APP_API_HOST}:${REACT_APP_API_PORT}${REACT_APP_API_PREFIX || ""}`;
+}
+// Case 3: Default → IP-based auto-detection
+else {
+  const base_ip = window.location.hostname;
+  API_BASE_URL = `http://${base_ip}:8888`;
+}
 
 // --- Axios instance ---
 export const api = axios.create({
@@ -39,5 +48,5 @@ export const updateStudent = (id, formData) =>
   });
 export const deleteStudent = (id) => api.delete(`/api/students/${id}`);
 
-// --- Debug Log ---
+// --- Debug log ---
 console.log(`[API] Using base URL: ${API_BASE_URL}`);

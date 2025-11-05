@@ -25,16 +25,15 @@ def add_attendance(attendance: AttendanceCreate, db: Session = Depends(get_db)):
         raise HTTPException(status_code=400, detail=f"Failed to add attendance: {str(e)}")
 
 
-# ✅ Get all attendance records (with optional filters)
-@router.get("/", response_model=list[AttendanceResponse])
-def list_attendance(
-    db: Session = Depends(get_db),
-    class_id: int | None = Query(None, description="Filter by class ID"),
-    classroom_id: int | None = Query(None, description="Filter by classroom ID"),
-    start_date: datetime | None = Query(None, description="Filter start date (YYYY-MM-DD)"),
-    end_date: datetime | None = Query(None, description="Filter end date (YYYY-MM-DD)"),
+# ✅ Unified endpoint for attendance listing
+def _fetch_attendance_records(
+    db: Session,
+    class_id: int | None,
+    classroom_id: int | None,
+    start_date: datetime | None,
+    end_date: datetime | None,
 ):
-    """Fetch attendance records with optional filters."""
+    """Shared logic for both `/` and `/records` routes."""
     try:
         return get_attendance_records(
             db=db,
@@ -47,7 +46,33 @@ def list_attendance(
         raise HTTPException(status_code=400, detail=f"Failed to fetch attendance: {str(e)}")
 
 
-# ✅ Export attendance to Excel (with optional filters)
+# ✅ Support `/api/attendance/`
+@router.get("/", response_model=list[AttendanceResponse])
+def list_attendance_root(
+    db: Session = Depends(get_db),
+    class_id: int | None = Query(None),
+    classroom_id: int | None = Query(None),
+    start_date: datetime | None = Query(None),
+    end_date: datetime | None = Query(None),
+):
+    """Fetch attendance records (base route)."""
+    return _fetch_attendance_records(db, class_id, classroom_id, start_date, end_date)
+
+
+# ✅ Support `/api/attendance/records`
+@router.get("/records", response_model=list[AttendanceResponse])
+def list_attendance_records(
+    db: Session = Depends(get_db),
+    class_id: int | None = Query(None),
+    classroom_id: int | None = Query(None),
+    start_date: datetime | None = Query(None),
+    end_date: datetime | None = Query(None),
+):
+    """Fetch attendance records (alias endpoint)."""
+    return _fetch_attendance_records(db, class_id, classroom_id, start_date, end_date)
+
+
+# ✅ Export attendance to Excel
 @router.get("/export")
 def export_attendance(
     db: Session = Depends(get_db),
@@ -56,7 +81,7 @@ def export_attendance(
     start_date: datetime | None = Query(None),
     end_date: datetime | None = Query(None),
 ):
-    """Export attendance records (optionally filtered) to an Excel file."""
+    """Export attendance records to Excel."""
     try:
         file_path = export_attendance_to_excel(
             db=db,
@@ -77,11 +102,11 @@ def export_attendance(
 # ✅ Upload attendance photo
 @router.post("/photo")
 async def upload_photo(
-    student_id: int = Form(..., description="Student ID for attendance"),
-    file: UploadFile = File(..., description="Photo file to upload"),
+    student_id: int = Form(...),
+    file: UploadFile = File(...),
     db: Session = Depends(get_db),
 ):
-    """Upload a photo for a student's attendance."""
+    """Upload a photo for attendance."""
     try:
         photo_url = await service_upload_photo(file=file, student_id=student_id, db=db)
         return {"photo_url": photo_url}
@@ -92,12 +117,11 @@ async def upload_photo(
 # ✅ Dashboard stats endpoint
 @router.get("/stats")
 def get_attendance_stats(db: Session = Depends(get_db)):
-    """Return dashboard summary counts."""
+    """Return daily attendance summary stats."""
     try:
         today = date.today()
-
         total_students = db.query(Student).count()
-        today_attendance = db.query(Attendance).filter(Attendance.date == today).count()
+        total_today = db.query(Attendance).filter(Attendance.date == today).count()
         present_today = db.query(Attendance).filter(
             Attendance.date == today, Attendance.status == "present"
         ).count()
@@ -107,10 +131,9 @@ def get_attendance_stats(db: Session = Depends(get_db)):
 
         return {
             "totalStudents": total_students,
-            "todayAttendance": today_attendance,
+            "todayAttendance": total_today,
             "presentToday": present_today,
             "absentToday": absent_today,
         }
-
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error fetching stats: {str(e)}")
