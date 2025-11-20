@@ -1,6 +1,7 @@
 import axios from "axios";
+import { jwtDecode } from "jwt-decode";
 
-// --- Load environment variables (.env) ---
+// Load variables
 const {
   REACT_APP_URL_TYPE,
   REACT_APP_API_PROTOCOL,
@@ -9,34 +10,88 @@ const {
   REACT_APP_API_PREFIX,
 } = process.env;
 
-// --- Determine base URL ---
+// ------------------------------
+// 🌐 BASE URL LOGIC
+// ------------------------------
 let API_BASE_URL = "";
 
-// Case 1: Central (Production)
+// 1️⃣ Central deployment
 if (REACT_APP_URL_TYPE === "central") {
   API_BASE_URL = "https://test-salil.smart-iam.com/api";
 }
-// Case 2: Use .env API_HOST + PORT if provided
+
+// 2️⃣ If env host + port provided → use them as-is
 else if (REACT_APP_API_HOST && REACT_APP_API_PORT) {
   API_BASE_URL = `${REACT_APP_API_PROTOCOL || "http"}://${REACT_APP_API_HOST}:${REACT_APP_API_PORT}${REACT_APP_API_PREFIX || ""}`;
 }
-// Case 3: Default → IP-based auto-detection
+
+// 3️⃣ Fallback → Browser's IP + port 8888 (YOUR REQUIREMENT)
 else {
   const base_ip = window.location.hostname;
   API_BASE_URL = `http://${base_ip}:8888`;
 }
 
-// --- Axios instance ---
+// ------------------------------
+// 🔧 AXIOS INSTANCE
+// ------------------------------
 export const api = axios.create({
   baseURL: API_BASE_URL,
   withCredentials: true,
+  headers: { "Content-Type": "application/json" },
 });
 
-// --- Auth ---
-export const login = (username, password) =>
-  api.post("/api/auth/login", { username, password });
+// ------------------------------
+// 🔐 SESSION LOGIC
+// ------------------------------
+function logoutNow() {
+  localStorage.removeItem("user");
+  localStorage.removeItem("AdminToken");
+  window.location.href = "/login";
+}
 
-// --- Students ---
+function scheduleAutoLogout(token) {
+  try {
+    const decoded = jwtDecode(token);
+    const expTime = decoded.exp * 1000 - Date.now();
+    if (expTime <= 0) return logoutNow();
+    setTimeout(logoutNow, expTime);
+  } catch {
+    logoutNow();
+  }
+}
+
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem("AdminToken");
+  if (token) {
+    config.headers["Authorization"] = `Bearer ${token}`;
+    scheduleAutoLogout(token);
+  }
+  return config;
+});
+
+api.interceptors.response.use(
+  (res) => res,
+  (err) => {
+    if (err.response?.status === 401) logoutNow();
+    return Promise.reject(err);
+  }
+);
+
+// ------------------------------
+// 🔑 AUTH
+// ------------------------------
+export const login = (username, password) =>
+  api.post(
+    "/api/auth/login",
+    new URLSearchParams({ username, password }),
+    { headers: { "Content-Type": "application/x-www-form-urlencoded" } }
+  );
+
+export const fetchProfile = () => api.get("/api/auth/me");
+
+// ------------------------------
+// 🧑‍🎓 STUDENTS
+// ------------------------------
 export const fetchStudents = () => api.get("/api/students/");
 export const createStudent = (formData) =>
   api.post("/api/students/", formData, {
@@ -48,5 +103,17 @@ export const updateStudent = (id, formData) =>
   });
 export const deleteStudent = (id) => api.delete(`/api/students/${id}`);
 
-// --- Debug log ---
-console.log(`[API] Using base URL: ${API_BASE_URL}`);
+// ------------------------------
+// 🔐 USERS + ROLES + PERMISSIONS
+// ------------------------------
+export const fetchUsers = () => api.get("/api/users");
+export const createUser = (data) => api.post("/api/users", data);
+export const fetchRoles = () => api.get("/api/roles");
+export const createRole = (data) => api.post("/api/roles", data);
+export const fetchPermissions = (roleId) =>
+  api.get(`/api/permissions/${roleId}`);
+export const updatePermissions = (roleId, data) =>
+  api.put(`/api/permissions/${roleId}`, data);
+
+// ------------------------------
+console.log(`🟢 [API] Using base URL → ${API_BASE_URL}`);

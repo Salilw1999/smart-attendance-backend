@@ -1,6 +1,6 @@
 from fastapi import Request, HTTPException, status, Depends
 from sqlalchemy.orm import Session
-from models.user_model import User
+from db.models.user_model import User
 from db.db import get_db
 
 class SessionAuth:

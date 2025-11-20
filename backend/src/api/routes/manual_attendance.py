@@ -4,10 +4,15 @@ from datetime import date, datetime
 from pydantic import BaseModel
 
 from db.db import get_db
-from models.student_model import Student
-from models.attendance_model import Attendance
-from models.class_model import Class
-from models.classroom_model import Classroom
+from db.models.student_model import Student
+from db.models.attendance_model import Attendance
+from db.models.class_model import Class
+from db.models.classroom_model import Classroom
+
+# from models.student_model import Student
+# from models.attendance_model import Attendance
+# from models.class_model import Class
+# from models.classroom_model import Classroom
 
 router = APIRouter()  # ✅ no prefix here
 

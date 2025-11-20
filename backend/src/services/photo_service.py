@@ -3,8 +3,8 @@ from minio import Minio
 import os
 import uuid
 from sqlalchemy.orm import Session
-from models.student_model import Student
-
+# from models.student_model import Student
+from db.models.student_model import Student
 
 def _build_minio_client():
     """Create a MinIO client based on .env variables"""

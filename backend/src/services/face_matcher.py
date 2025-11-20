@@ -2,8 +2,8 @@
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
 from sqlalchemy.orm import Session
-from models.student_model import Student
-
+#from models.student_model import Student
+from db.models.student_model import Student
 SIMILARITY_THRESHOLD = 0.6  # lower is more strict for cosine distance; we use similarity, so threshold ~0.6-0.65
 
 def load_embeddings(db: Session):

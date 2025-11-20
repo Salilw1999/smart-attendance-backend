@@ -1,8 +1,10 @@
 from sqlalchemy.orm import Session, joinedload
 from fastapi import HTTPException
 from datetime import datetime
-from models.attendance_model import Attendance
-from models.student_model import Student
+from db.models.attendance_model import Attendance
+from db.models.student_model import Student
+# from models.attendance_model import Attendance
+# from models.student_model import Student
 from schemas.attendance_schema import AttendanceCreate
 from utils.excel_exporter import export_attendance_to_excel as export_to_excel
 

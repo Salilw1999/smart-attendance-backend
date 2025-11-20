@@ -7,9 +7,12 @@ from PIL import Image, UnidentifiedImageError
 from fastapi import APIRouter, Depends, UploadFile, File, Form, HTTPException, status, Query
 from sqlalchemy.orm import Session
 from db.db import get_db
-from models.student_model import Student
-from models.class_model import Class
-from models.classroom_model import Classroom
+from db.models.student_model import Student
+from db.models.class_model import Class
+from db.models.classroom_model import Classroom
+# from models.student_model import Student
+# from models.class_model import Class
+# from models.classroom_model import Classroom
 from schemas.student_schema import StudentResponse
 from services.minio_service import upload_file_to_minio, remove_url_object
 

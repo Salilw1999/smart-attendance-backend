@@ -3,10 +3,14 @@ from fastapi import HTTPException
 
 from sqlalchemy import and_
 from datetime import datetime, date
-from models.attendance_model import Attendance
-from models.student_model import Student
-from models.class_model import Class
-from models.classroom_model import Classroom
+from db.models.attendance_model import Attendance
+from db.models.student_model import Student
+from db.models.class_model import Class
+from db.models.classroom_model import Classroom
+# from models.attendance_model import Attendance
+# from models.student_model import Student
+# from models.class_model import Class
+# from models.classroom_model import Classroom
 from schemas.attendance_schema import AttendanceCreate
 from utils.excel_exporter import export_attendance_to_excel as export_to_excel
 

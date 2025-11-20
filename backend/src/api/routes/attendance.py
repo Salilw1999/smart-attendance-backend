@@ -10,8 +10,10 @@ from services.attendance_service import (
 )
 from services.photo_service import upload_photo as service_upload_photo
 from schemas.attendance_schema import AttendanceCreate, AttendanceResponse
-from models.attendance_model import Attendance
-from models.student_model import Student
+from db.models.attendance_model import Attendance
+from db.models.student_model import Student
+#from models.attendance_model import Attendance
+#from models.student_model import Student
 
 router = APIRouter(prefix="/api/attendance", tags=["Attendance"])
 

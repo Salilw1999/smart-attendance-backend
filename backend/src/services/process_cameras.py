@@ -6,8 +6,10 @@ import face_recognition
 from io import BytesIO
 from db.db import SessionLocal
 from services.face_matcher import load_embeddings, match_embedding
-from models.student_model import Student
-from models.attendance_model import Attendance  # create attendance model below
+from db.models.student_model import Student
+from db.models.attendance_model import Attendance
+# from models.student_model import Student
+# from models.attendance_model import Attendance  # create attendance model below
 from datetime import datetime
 
 CAMERA_URLS = os.getenv("CAMERA_URLS", "")  # comma-separated snapshot URLs

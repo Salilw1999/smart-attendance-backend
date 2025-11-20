@@ -1,7 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from sqlalchemy.orm import Session
 from db.db import get_db
-from models.student_model import Student
+from db.models.student_model import Student
+#from models.student_model import Student
 from datetime import datetime
 import os
 import shutil

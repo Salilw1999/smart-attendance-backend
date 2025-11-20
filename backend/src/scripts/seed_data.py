@@ -1,6 +1,8 @@
 from db.db import SessionLocal
-from models.class_model import Class
-from models.classroom_model import Classroom
+from db.models.class_model import Class
+from db.models.classroom_model import Classroom
+#from models.class_model import Class
+#from models.classroom_model import Classroom
 
 db = SessionLocal()
 

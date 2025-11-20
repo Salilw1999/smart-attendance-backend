@@ -1,99 +1,103 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { ThemeProvider, CssBaseline } from '@mui/material';
-import { AuthProvider, useAuth } from './contexts/AuthContext';
-import theme from './theme';
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import { ThemeProvider, CssBaseline } from "@mui/material";
+import { AuthProvider } from "./contexts/AuthContext";
+import theme from "./theme";
 
-// Pages
-import Login from './pages/Login';
-import Dashboard from './pages/Dashboard';
-import Students from './pages/Students';
-import Attendance from './pages/Attendance';
-import ClassAttendance from './pages/ClassAttendance';
+// ✅ Pages
+import Login from "./pages/Login";
+import Dashboard from "./pages/Dashboard";
+import Students from "./pages/Students";
+import Attendance from "./pages/Attendance";
+import ClassAttendance from "./pages/ClassAttendance";
+import UserManagement from "./pages/UserManagement";
 
-// Components
-import Layout from './components/Layout';
-
-// ✅ Private route wrapper
-const PrivateRoute = ({ children }) => {
-  const { isAuthenticated } = useAuth();
-  return isAuthenticated ? children : <Navigate to="/login" replace />;
-};
+// ✅ Components
+import Layout from "./components/Layout";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 function App() {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <AuthProvider>
-        <Router>
+      <Router>
+        <AuthProvider>
           <Routes>
-            {/* Public Login Route */}
+            {/* 🟢 Public route */}
             <Route path="/login" element={<Login />} />
 
-            {/* Default route → Dashboard */}
+            {/* 🔒 Protected Routes (with Layout wrapper) */}
             <Route
               path="/"
               element={
-                <PrivateRoute>
+                <ProtectedRoute>
                   <Layout>
                     <Dashboard />
                   </Layout>
-                </PrivateRoute>
+                </ProtectedRoute>
               }
             />
 
-            {/* Dashboard route */}
             <Route
               path="/dashboard"
               element={
-                <PrivateRoute>
+                <ProtectedRoute>
                   <Layout>
                     <Dashboard />
                   </Layout>
-                </PrivateRoute>
+                </ProtectedRoute>
               }
             />
 
-            {/* Students */}
             <Route
               path="/students"
               element={
-                <PrivateRoute>
+                <ProtectedRoute>
                   <Layout>
                     <Students />
                   </Layout>
-                </PrivateRoute>
+                </ProtectedRoute>
               }
             />
 
-            {/* Attendance */}
             <Route
               path="/attendance"
               element={
-                <PrivateRoute>
+                <ProtectedRoute>
                   <Layout>
                     <Attendance />
                   </Layout>
-                </PrivateRoute>
+                </ProtectedRoute>
               }
             />
 
-            {/* ✅ Class Attendance */}
             <Route
               path="/class-attendance"
               element={
-                <PrivateRoute>
+                <ProtectedRoute>
                   <Layout>
                     <ClassAttendance />
                   </Layout>
-                </PrivateRoute>
+                </ProtectedRoute>
               }
             />
 
-            {/* ✅ Catch-all redirect */}
-            <Route path="*" element={<Navigate to="/" replace />} />
+            {/* 🧑‍💼 Admin-only (optional check inside ProtectedRoute) */}
+            <Route
+              path="/user-management"
+              element={
+                <ProtectedRoute>
+                  <Layout>
+                    <UserManagement />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+
+            {/* 🚫 Catch-all redirect */}
+            <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Routes>
-        </Router>
-      </AuthProvider>
+        </AuthProvider>
+      </Router>
     </ThemeProvider>
   );
 }
