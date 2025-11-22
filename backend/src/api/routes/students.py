@@ -7,6 +7,7 @@ from db.db import get_db
 from db.models.student_model import Student
 from db.models.class_model import Class
 from db.models.classroom_model import Classroom
+from db.models.attendance_model import Attendance
 # from models.student_model import Student
 # from models.class_model import Class
 # from models.classroom_model import Classroom
@@ -166,6 +167,15 @@ def delete_student(student_id: int, db: Session = Depends(get_db)):
             remove_url_object(student.photo_url)
         except Exception:
             pass
+    # Delete any attendances referencing this student first to avoid
+    # foreign-key NOT NULL constraint violations. We use a bulk delete
+    # for efficiency and to avoid loading attendance objects into memory.
+    try:
+        db.query(Attendance).filter(Attendance.student_id == student_id).delete(synchronize_session=False)
+    except Exception:
+        # If deletion fails for some reason, raise an HTTP error so client
+        # knows the student could not be removed cleanly.
+        raise HTTPException(status_code=500, detail="Failed to delete related attendance records")
 
     db.delete(student)
     db.commit()
