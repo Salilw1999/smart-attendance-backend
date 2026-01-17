@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: smart-attendance-backend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: smart-attendance
+  template:
+    metadata:
+      labels:
+        app: smart-attendance
+    spec:
+      containers:
+        - name: smart-backend
+          image: salilwadke/smart-attendance-backend:1.0
+          ports:
+            - containerPort: 8000
+          envFrom:
+            - configMapRef:
+                name: smart-backend-env
+
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: smart-attendance-frontend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: smart-attendance
+  template:
+    metadata:
+      labels:
+        app: smart-attendance
+    spec:
+      containers:
+        - name: smart-frontend
+          image: salilwadke/smart-attendance-frontend:1.0
+          ports:
+            - containerPort: 80
+          envFrom:
+            - configMapRef:
+                name: smart-frontend-env

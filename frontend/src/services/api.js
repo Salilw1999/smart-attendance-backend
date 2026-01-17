@@ -106,10 +106,14 @@ export const deleteStudent = (id) => api.delete(`/api/students/${id}`);
 // ------------------------------
 // 🔐 USERS + ROLES + PERMISSIONS
 // ------------------------------
-export const fetchUsers = () => api.get("/api/users");
-export const createUser = (data) => api.post("/api/users", data);
-export const fetchRoles = () => api.get("/api/roles");
-export const createRole = (data) => api.post("/api/roles", data);
+
+
+
+
+export const fetchUsers = () => api.get("/api/users/");
+export const createUser = (data) => api.post("/api/users/", data);
+export const fetchRoles = () => api.get("/api/roles/");
+export const createRole = (data) => api.post("/api/roles/", data);
 export const fetchPermissions = (roleId) =>
   api.get(`/api/permissions/${roleId}`);
 export const updatePermissions = (roleId, data) =>
